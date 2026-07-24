@@ -1,0 +1,193 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EstadoTicket {
+  ACTIVO
+  ANULADO
+}
+
+enum TipoEgreso {
+  GASTO
+  PLANILLA
+  PAGO_FIJO
+  DEVOLUCION
+  ASCENSOR
+  OTROS
+}
+
+enum MetodoPago {
+  EFECTIVO
+  PLIN
+  TRANSFERENCIA
+}
+
+model Procedencia {
+  id           Int        @id @default(autoincrement())
+  nombre       String     @unique
+  distrito     String?
+  provincia    String?
+  departamento String?
+  pacientes    Paciente[]
+
+  @@map("procedencias")
+}
+
+model Paciente {
+  id                    Int         @id @default(autoincrement())
+  nombre                String
+  celular               String?
+  numeroHistoriaClinica String?
+  procedenciaId         Int
+  procedencia           Procedencia @relation(fields: [procedenciaId], references: [id])
+  creadoEn              DateTime    @default(now())
+  tickets               Ticket[]
+
+  @@index([nombre])
+  @@index([celular])
+  @@map("pacientes")
+}
+
+model Medico {
+  id                  Int      @id @default(autoincrement())
+  nombre              String   @unique
+  especialidad        String
+  grado               String
+  celular             String?
+  creadoEn            DateTime @default(now())
+  ticketsAtendidos    Ticket[] @relation("MedicoCargo")
+  ticketsSolicitados  Ticket[] @relation("MedicoSolicitante")
+
+  @@map("medicos")
+}
+
+model Tarifa {
+  id                Int      @id @default(autoincrement())
+  categoria         String
+  especialidad      String
+  descripcion       String
+  precioTotal       Decimal  @db.Decimal(10, 2)
+  tipoReparto       String
+  comisionMedico    Decimal  @db.Decimal(10, 2)
+  comisionClinica   Decimal  @db.Decimal(10, 2)
+  requiereTecnico   Boolean  @default(false)
+  comisionTecnico   Decimal  @default(0.00) @db.Decimal(10, 2)
+  creadoEn          DateTime @default(now())
+  tickets           Ticket[]
+
+  @@map("tarifas")
+}
+
+model CajaDiaria {
+  id                     Int         @id @default(autoincrement())
+  fecha                  DateTime    @unique @db.Date
+  montoApertura          Decimal     @db.Decimal(10, 2)
+  montoEfectivoEsperado  Decimal     @default(0.00) @db.Decimal(10, 2)
+  montoEfectivoReal      Decimal?    @db.Decimal(10, 2)
+  diferenciaCierre       Decimal     @default(0.00) @db.Decimal(10, 2)
+  montoDigitalEsperado   Decimal     @default(0.00) @db.Decimal(10, 2)
+  fechaApertura          DateTime    @default(now())
+  fechaCierre            DateTime?
+  abierta                Boolean     @default(true)
+  observaciones          String?
+  tickets                Ticket[]
+  egresos                Egreso[]
+  depositos              Deposito[]
+  dietas                 Dieta[]
+
+  @@map("cajas_diarias")
+}
+
+model Ticket {
+  id                         Int          @id @default(autoincrement())
+  numeroTicket               String       @unique
+  numeroBoleta               String?
+  fecha                      DateTime     @default(now())
+  pacienteId                 Int
+  paciente                   Paciente     @relation(fields: [pacienteId], references: [id])
+  medicoId                   Int
+  medico                     Medico       @relation("MedicoCargo", fields: [medicoId], references: [id])
+  medicoSolicitanteId        Int?
+  medicoSolicitante          Medico?      @relation("MedicoSolicitante", fields: [medicoSolicitanteId], references: [id])
+  tarifaId                   Int
+  tarifa                     Tarifa       @relation(fields: [tarifaId], references: [id])
+  descripcionAdicional       String?
+  metodoPago                 MetodoPago
+  montoPaciente              Decimal      @db.Decimal(10, 2)
+  montoMedico                Decimal      @db.Decimal(10, 2)
+  montoClinica               Decimal      @db.Decimal(10, 2)
+  montoTecnico               Decimal      @db.Decimal(10, 2)
+  nombreTecnico              String?
+  certificadoFormulario      String?
+  certificadoNumero          String?
+  solicitanteHistoriaClinica String?
+  estado                     EstadoTicket @default(ACTIVO)
+  cajaDiariaId               Int
+  cajaDiaria                 CajaDiaria   @relation(fields: [cajaDiariaId], references: [id])
+  sunatProcesado             Boolean      @default(false)
+  sunatError                 String?
+  creadoEn                   DateTime     @default(now())
+
+  @@index([fecha])
+  @@index([medicoId])
+  @@index([cajaDiariaId])
+  @@map("tickets")
+}
+
+model Egreso {
+  id                Int        @id @default(autoincrement())
+  fecha             DateTime   @default(now())
+  tipoEgreso        TipoEgreso
+  subcategoria      String?
+  numeroComprobante String?
+  proveedor         String?
+  ruc               String?
+  observaciones     String
+  monto             Decimal    @db.Decimal(10, 2)
+  ticketAnuladoId   Int?
+  cajaDiariaId      Int
+  cajaDiaria        CajaDiaria @relation(fields: [cajaDiariaId], references: [id])
+  creadoEn          DateTime   @default(now())
+
+  @@index([fecha])
+  @@index([cajaDiariaId])
+  @@map("egresos")
+}
+
+model Deposito {
+  id              Int        @id @default(autoincrement())
+  fecha           DateTime   @default(now())
+  banco           String
+  numeroOperacion String
+  concepto        String
+  monto           Decimal    @db.Decimal(10, 2)
+  cajaDiariaId    Int
+  cajaDiaria      CajaDiaria @relation(fields: [cajaDiariaId], references: [id])
+  creadoEn        DateTime   @default(now())
+
+  @@index([fecha])
+  @@index([cajaDiariaId])
+  @@map("depositos")
+}
+
+model Dieta {
+  id            Int        @id @default(autoincrement())
+  fecha         DateTime   @default(now())
+  desayunoCant  Int        @default(0)
+  almuerzoCant  Int        @default(0)
+  cenaCant      Int        @default(0)
+  observaciones String?
+  monto         Decimal    @db.Decimal(10, 2)
+  cajaDiariaId  Int
+  cajaDiaria    CajaDiaria @relation(fields: [cajaDiariaId], references: [id])
+  creadoEn      DateTime   @default(now())
+
+  @@index([fecha])
+  @@index([cajaDiariaId])
+  @@map("dietas")
+}
