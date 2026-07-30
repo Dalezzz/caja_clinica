@@ -7,6 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum RolUsuario {
+  ADMINISTRADOR
+  RECEPCIONISTA
+}
+
 enum EstadoTicket {
   ACTIVO
   ANULADO
@@ -18,6 +23,7 @@ enum TipoEgreso {
   PAGO_FIJO
   DEVOLUCION
   ASCENSOR
+  COMISION
   OTROS
 }
 
@@ -25,6 +31,31 @@ enum MetodoPago {
   EFECTIVO
   PLIN
   TRANSFERENCIA
+  TARJETA
+}
+
+enum EstadoSunat {
+  PENDIENTE
+  PROCESANDO
+  EMITIDO
+  ERROR
+}
+
+model Usuario {
+  id               Int          @id @default(autoincrement())
+  nombre           String
+  usuario          String       @unique
+  contrasena       String       // Hash bcrypt
+  rol              RolUsuario
+  creadoEn         DateTime     @default(now())
+  
+  // Relaciones de Auditoría
+  ticketsCreados   Ticket[]     @relation("UsuarioCreador")
+  egresosCreados   Egreso[]     @relation("UsuarioEgreso")
+  cajasAperturadas CajaDiaria[] @relation("UsuarioApertura")
+  cajasCerradas    CajaDiaria[] @relation("UsuarioCierre")
+
+  @@map("usuarios")
 }
 
 model Procedencia {
@@ -54,14 +85,15 @@ model Paciente {
 }
 
 model Medico {
-  id                  Int      @id @default(autoincrement())
-  nombre              String   @unique
+  id                  Int                 @id @default(autoincrement())
+  nombre              String              @unique
   especialidad        String
   grado               String
   celular             String?
-  creadoEn            DateTime @default(now())
-  ticketsAtendidos    Ticket[] @relation("MedicoCargo")
-  ticketsSolicitados  Ticket[] @relation("MedicoSolicitante")
+  creadoEn            DateTime            @default(now())
+  ticketsAtendidos    Ticket[]            @relation("MedicoCargo")
+  ticketsSolicitados  Ticket[]            @relation("MedicoSolicitante")
+  liquidaciones       LiquidacionMedico[]
 
   @@map("medicos")
 }
@@ -84,17 +116,24 @@ model Tarifa {
 }
 
 model CajaDiaria {
-  id                     Int         @id @default(autoincrement())
-  fecha                  DateTime    @unique @db.Date
-  montoApertura          Decimal     @db.Decimal(10, 2)
-  montoEfectivoEsperado  Decimal     @default(0.00) @db.Decimal(10, 2)
-  montoEfectivoReal      Decimal?    @db.Decimal(10, 2)
-  diferenciaCierre       Decimal     @default(0.00) @db.Decimal(10, 2)
-  montoDigitalEsperado   Decimal     @default(0.00) @db.Decimal(10, 2)
-  fechaApertura          DateTime    @default(now())
+  id                     Int        @id @default(autoincrement())
+  fecha                  DateTime   @db.Date // Sin restricción @unique para soportar turnos
+  montoApertura          Decimal    @db.Decimal(10, 2)
+  montoEfectivoEsperado  Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoEfectivoReal      Decimal?   @db.Decimal(10, 2)
+  diferenciaCierre       Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoDigitalEsperado   Decimal    @default(0.00) @db.Decimal(10, 2)
+  fechaApertura          DateTime   @default(now())
   fechaCierre            DateTime?
-  abierta                Boolean     @default(true)
+  abierta                Boolean    @default(true)
   observaciones          String?
+  
+  // Auditoría
+  usuarioAperturaId      Int
+  usuarioApertura        Usuario    @relation("UsuarioApertura", fields: [usuarioAperturaId], references: [id])
+  usuarioCierreId        Int?
+  usuarioCierre          Usuario?   @relation("UsuarioCierre", fields: [usuarioCierreId], references: [id])
+  
   tickets                Ticket[]
   egresos                Egreso[]
   depositos              Deposito[]
@@ -103,35 +142,71 @@ model CajaDiaria {
   @@map("cajas_diarias")
 }
 
+model LiquidacionMedico {
+  id                Int       @id @default(autoincrement())
+  medicoId          Int
+  medico            Medico    @relation(fields: [medicoId], references: [id])
+  fechaLiquidacion  DateTime  @default(now())
+  periodoInicio     DateTime
+  periodoFin        DateTime
+  montoTotal        Decimal   @db.Decimal(10, 2)
+  comentarios       String?
+  egresoId          Int?      @unique
+  egreso            Egreso?   @relation("EgresoLiquidacion", fields: [egresoId], references: [id])
+  tickets           Ticket[]
+
+  @@map("liquidaciones_medicos")
+}
+
 model Ticket {
-  id                         Int          @id @default(autoincrement())
-  numeroTicket               String       @unique
+  id                         Int                @id @default(autoincrement())
+  numeroTicket               String             @unique
   numeroBoleta               String?
-  fecha                      DateTime     @default(now())
+  fecha                      DateTime           @default(now())
   pacienteId                 Int
-  paciente                   Paciente     @relation(fields: [pacienteId], references: [id])
+  paciente                   Paciente           @relation(fields: [pacienteId], references: [id])
   medicoId                   Int
-  medico                     Medico       @relation("MedicoCargo", fields: [medicoId], references: [id])
+  medico                     Medico             @relation("MedicoCargo", fields: [medicoId], references: [id])
   medicoSolicitanteId        Int?
-  medicoSolicitante          Medico?      @relation("MedicoSolicitante", fields: [medicoSolicitanteId], references: [id])
+  medicoSolicitante          Medico?            @relation("MedicoSolicitante", fields: [medicoSolicitanteId], references: [id])
   tarifaId                   Int
-  tarifa                     Tarifa       @relation(fields: [tarifaId], references: [id])
+  tarifa                     Tarifa             @relation(fields: [tarifaId], references: [id])
   descripcionAdicional       String?
   metodoPago                 MetodoPago
-  montoPaciente              Decimal      @db.Decimal(10, 2)
-  montoMedico                Decimal      @db.Decimal(10, 2)
-  montoClinica               Decimal      @db.Decimal(10, 2)
-  montoTecnico               Decimal      @db.Decimal(10, 2)
+  montoPaciente              Decimal            @db.Decimal(10, 2)
+  montoMedico                Decimal            @db.Decimal(10, 2)
+  montoClinica               Decimal            @db.Decimal(10, 2)
+  montoTecnico               Decimal            @db.Decimal(10, 2)
   nombreTecnico              String?
   certificadoFormulario      String?
   certificadoNumero          String?
   solicitanteHistoriaClinica String?
-  estado                     EstadoTicket @default(ACTIVO)
+  estado                     EstadoTicket       @default(ACTIVO)
   cajaDiariaId               Int
-  cajaDiaria                 CajaDiaria   @relation(fields: [cajaDiariaId], references: [id])
-  sunatProcesado             Boolean      @default(false)
+  cajaDiaria                 CajaDiaria         @relation(fields: [cajaDiariaId], references: [id])
+  
+  // Integración SUNAT (Boletas)
+  sunatEstado                EstadoSunat        @default(PENDIENTE)
   sunatError                 String?
-  creadoEn                   DateTime     @default(now())
+  sunatXmlPath               String?
+  sunatPdfPath               String?
+  
+  // Integración SUNAT (Notas de Crédito)
+  sunatNotaCreditoNumero     String?
+  sunatNotaCreditoEstado     EstadoSunat?
+  sunatNotaCreditoXmlPath    String?
+  sunatNotaCreditoPdfPath    String?
+  sunatNotaCreditoError      String?
+  
+  // Auditoría
+  usuarioCreadorId           Int
+  usuarioCreador             Usuario            @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  
+  // Liquidación Médica
+  liquidacionId              Int?
+  liquidacion                LiquidacionMedico? @relation(fields: [liquidacionId], references: [id])
+  
+  creadoEn                   DateTime           @default(now())
 
   @@index([fecha])
   @@index([medicoId])
@@ -140,19 +215,27 @@ model Ticket {
 }
 
 model Egreso {
-  id                Int        @id @default(autoincrement())
-  fecha             DateTime   @default(now())
+  id                Int                @id @default(autoincrement())
+  fecha             DateTime           @default(now())
   tipoEgreso        TipoEgreso
   subcategoria      String?
   numeroComprobante String?
   proveedor         String?
   ruc               String?
   observaciones     String
-  monto             Decimal    @db.Decimal(10, 2)
+  monto             Decimal            @db.Decimal(10, 2)
   ticketAnuladoId   Int?
   cajaDiariaId      Int
-  cajaDiaria        CajaDiaria @relation(fields: [cajaDiariaId], references: [id])
-  creadoEn          DateTime   @default(now())
+  cajaDiaria         CajaDiaria         @relation(fields: [cajaDiariaId], references: [id])
+  
+  // Auditoría
+  usuarioEgresoId   Int
+  usuarioEgreso     Usuario            @relation("UsuarioEgreso", fields: [usuarioEgresoId], references: [id])
+  
+  // Relación con Liquidación (para egresos de tipo COMISION)
+  liquidacion       LiquidacionMedico? @relation("EgresoLiquidacion")
+  
+  creadoEn          DateTime           @default(now())
 
   @@index([fecha])
   @@index([cajaDiariaId])

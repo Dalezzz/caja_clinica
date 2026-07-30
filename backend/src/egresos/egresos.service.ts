@@ -23,6 +23,7 @@ export class EgresosService {
       data: {
         ...createEgresoDto,
         cajaDiariaId: caja.id,
+        usuarioEgresoId: (createEgresoDto as any).usuarioEgresoId || 1, // Fallback al Admin
       },
       include: { cajaDiaria: true },
     });

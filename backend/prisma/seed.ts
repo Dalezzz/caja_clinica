@@ -1,8 +1,26 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // Cifrar contraseña del administrador
+  const contrasenaHash = await bcrypt.hash('Medic2026!', 10);
+
+  // Crear usuario administrador inicial
+  const adminUser = await prisma.usuario.upsert({
+    where: { usuario: 'admin' },
+    update: {},
+    create: {
+      nombre: 'Administrador',
+      usuario: 'admin',
+      contrasena: contrasenaHash,
+      rol: 'ADMINISTRADOR',
+    },
+  });
+
+  console.log('✅ Usuario Administrador creado:', adminUser.usuario);
+
   // Procedencias iniciales
   const procedencias = await Promise.all([
     prisma.procedencia.upsert({

@@ -63,6 +63,7 @@ export class TicketsService {
         certificadoNumero: createTicketDto.certificadoNumero,
         solicitanteHistoriaClinica: createTicketDto.solicitanteHistoriaClinica,
         cajaDiariaId: caja.id,
+        usuarioCreadorId: (createTicketDto as any).usuarioCreadorId || 1, // Fallback al Admin
       },
       include: {
         paciente: { include: { procedencia: true } },

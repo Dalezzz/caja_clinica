@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,8 +6,16 @@
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    @apply bg-slate-50 text-slate-900 antialiased selection:bg-teal-600 selection:text-white;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    @apply bg-[#fafafa] text-zinc-950 antialiased selection:bg-zinc-900 selection:text-white;
+  }
+
+  /* Inputs de Shadcn */
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    @apply h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50;
   }
 }
 
@@ -17,17 +25,17 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #fafafa;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #e4e4e7;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0d9488;
+  background: #a1a1aa;
 }
 
-/* Modal and Thermal 80mm Print styles */
+/* Estilos de Impresión Térmica 80mm */
 @media print {
   body * {
     visibility: hidden;
@@ -50,14 +58,13 @@
 
 .white-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e4e4e7; /* border-zinc-200 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .white-card-hover {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 .white-card-hover:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  border-color: #d4d4d8; /* border-zinc-300 */
 }

@@ -14,6 +14,7 @@ export class CajasDiariasService {
         montoApertura: createCajasDiariaDto.montoApertura,
         montoEfectivoEsperado: createCajasDiariaDto.montoApertura,
         abierta: true,
+        usuarioAperturaId: (createCajasDiariaDto as any).usuarioAperturaId || 1, // Fallback al Admin seeded
       },
     });
   }
@@ -61,6 +62,7 @@ export class CajasDiariasService {
         abierta: false,
         fechaCierre: new Date(),
         observaciones,
+        usuarioCierreId: 1, // Default Cierre por Admin
       },
     });
   }
