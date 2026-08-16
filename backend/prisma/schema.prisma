@@ -1,0 +1,346 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RolUsuario {
+  ADMINISTRADOR
+  RECEPCIONISTA
+}
+
+enum EstadoTicket {
+  ACTIVO
+  ANULADO
+}
+
+enum TipoEgreso {
+  GASTO
+  PLANILLA
+  PAGO_FIJO
+  DEVOLUCION
+  ASCENSOR
+  COMISION
+  OTROS
+}
+
+enum MetodoPago {
+  EFECTIVO
+  PLIN
+  TRANSFERENCIA
+  TARJETA
+}
+
+enum EstadoSunat {
+  PENDIENTE
+  PROCESANDO
+  EMITIDO
+  ERROR
+}
+
+enum EstadoAlquiler {
+  ACTIVO
+  FINALIZADO
+  CANCELADO
+}
+
+enum EstadoComprobante {
+  BORRADOR
+  FIRMADO
+  CANCELADO
+}
+
+model Usuario {
+  id               Int          @id @default(autoincrement())
+  nombre           String
+  usuario          String       @unique
+  contrasena       String        // Hash bcrypt
+  rol              RolUsuario
+  creadoEn         DateTime     @default(now())
+  
+  // Relaciones de Auditoría
+  ticketsCreados   Ticket[]     @relation("UsuarioCreador")
+  egresosCreados   Egreso[]     @relation("UsuarioEgreso")
+  cajasAperturadas CajaDiaria[] @relation("UsuarioApertura")
+  cajasCerradas    CajaDiaria[] @relation("UsuarioCierre")
+  alquileresCreados AlquilerEspacio[] @relation("UsuarioCreadorAlquiler")
+  comprobantesCreados ComprobantePagoMedico[] @relation("UsuarioCreadorComprobante")
+
+  @@map("usuarios")
+}
+
+model Procedencia {
+  id           Int        @id @default(autoincrement())
+  nombre       String     @unique
+  distrito     String?
+  provincia    String?
+  departamento String?
+  pacientes    Paciente[]
+
+  @@map("procedencias")
+}
+
+model Paciente {
+  id                    Int         @id @default(autoincrement())
+  nombre                String
+  celular               String?
+  numeroHistoriaClinica String?
+  procedenciaId         Int
+  procedencia           Procedencia @relation(fields: [procedenciaId], references: [id])
+  creadoEn              DateTime    @default(now())
+  tickets               Ticket[]
+
+  @@index([nombre])
+  @@index([celular])
+  @@map("pacientes")
+}
+
+model Medico {
+  id                  Int                 @id @default(autoincrement())
+  nombre              String              @unique
+  especialidad        String
+  grado               String
+  celular             String?
+  creadoEn            DateTime            @default(now())
+  ticketsAtendidos    Ticket[]            @relation("MedicoCargo")
+  ticketsSolicitados  Ticket[]            @relation("MedicoSolicitante")
+  liquidaciones       LiquidacionMedico[]
+  comprobantes        ComprobantePagoMedico[] @relation("MedicoPago")
+
+  @@map("medicos")
+}
+
+model Tarifa {
+  id                Int      @id @default(autoincrement())
+  categoria         String
+  especialidad      String
+  descripcion       String
+  precioTotal       Decimal  @db.Decimal(10, 2)
+  tipoReparto       String
+  comisionMedico    Decimal  @db.Decimal(10, 2)
+  comisionClinica   Decimal  @db.Decimal(10, 2)
+  requiereTecnico   Boolean  @default(false)
+  comisionTecnico   Decimal  @default(0.00) @db.Decimal(10, 2)
+  creadoEn          DateTime @default(now())
+  tickets           Ticket[]
+
+  @@map("tarifas")
+}
+
+model CajaDiaria {
+  id                     Int        @id @default(autoincrement())
+  fecha                  DateTime   @db.Date // Sin restricción @unique para soportar turnos
+  montoApertura          Decimal    @db.Decimal(10, 2)
+  montoEfectivoEsperado  Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoEfectivoReal      Decimal?   @db.Decimal(10, 2)
+  diferenciaCierre       Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoDigitalEsperado   Decimal    @default(0.00) @db.Decimal(10, 2)
+  fechaApertura          DateTime   @default(now())
+  fechaCierre            DateTime?
+  abierta                Boolean    @default(true)
+  observaciones          String?
+  
+  // Auditoría
+  usuarioAperturaId      Int
+  usuarioApertura        Usuario    @relation("UsuarioApertura", fields: [usuarioAperturaId], references: [id])
+  usuarioCierreId        Int?
+  usuarioCierre          Usuario?   @relation("UsuarioCierre", fields: [usuarioCierreId], references: [id])
+  
+  tickets                Ticket[]
+  egresos                Egreso[]
+  depositos              Deposito[]
+  dietas                 Dieta[]
+  alquileres             AlquilerEspacio[]
+  pagosMedicos           ComprobantePagoMedico[] @relation("CajaPagoMedico")
+
+  @@map("cajas_diarias")
+}
+
+model LiquidacionMedico {
+  id                Int       @id @default(autoincrement())
+  medicoId          Int
+  medico            Medico    @relation(fields: [medicoId], references: [id])
+  fechaLiquidacion  DateTime  @default(now())
+  periodoInicio     DateTime
+  periodoFin        DateTime
+  montoTotal        Decimal   @db.Decimal(10, 2)
+  comentarios       String?
+  egresoId          Int?      @unique
+  egreso            Egreso?   @relation("EgresoLiquidacion", fields: [egresoId], references: [id])
+  tickets           Ticket[]
+
+  @@map("liquidaciones_medicos")
+}
+
+model Ticket {
+  id                         Int                @id @default(autoincrement())
+  numeroTicket               String             @unique
+  numeroBoleta               String?
+  fecha                      DateTime           @default(now())
+  pacienteId                 Int
+  paciente                   Paciente           @relation(fields: [pacienteId], references: [id])
+  medicoId                   Int
+  medico                     Medico             @relation("MedicoCargo", fields: [medicoId], references: [id])
+  medicoSolicitanteId        Int?
+  medicoSolicitante          Medico?            @relation("MedicoSolicitante", fields: [medicoSolicitanteId], references: [id])
+  tarifaId                   Int
+  tarifa                     Tarifa             @relation(fields: [tarifaId], references: [id])
+  descripcionAdicional       String?
+  metodoPago                 MetodoPago
+  montoPaciente              Decimal            @db.Decimal(10, 2)
+  montoMedico                Decimal            @db.Decimal(10, 2)
+  montoClinica               Decimal            @db.Decimal(10, 2)
+  montoTecnico               Decimal            @db.Decimal(10, 2)
+  nombreTecnico              String?
+  certificadoFormulario      String?
+  certificadoNumero          String?
+  solicitanteHistoriaClinica String?
+  estado                     EstadoTicket       @default(ACTIVO)
+  cajaDiariaId               Int
+  cajaDiaria                 CajaDiaria         @relation(fields: [cajaDiariaId], references: [id])
+  
+  // Integración SUNAT (Boletas)
+  sunatEstado                EstadoSunat        @default(PENDIENTE)
+  sunatError                 String?
+  sunatXmlPath               String?
+  sunatPdfPath               String?
+  
+  // Integración SUNAT (Notas de Crédito)
+  sunatNotaCreditoNumero     String?
+  sunatNotaCreditoEstado     EstadoSunat?
+  sunatNotaCreditoXmlPath    String?
+  sunatNotaCreditoPdfPath    String?
+  sunatNotaCreditoError      String?
+  
+  // Auditoría
+  usuarioCreadorId           Int
+  usuarioCreador             Usuario            @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  
+  // Liquidación Médica
+  liquidacionId              Int?
+  liquidacion                LiquidacionMedico? @relation(fields: [liquidacionId], references: [id])
+  
+  creadoEn                   DateTime           @default(now())
+
+  @@index([fecha])
+  @@index([medicoId])
+  @@index([cajaDiariaId])
+  @@map("tickets")
+}
+
+model Egreso {
+  id                Int                @id @default(autoincrement())
+  fecha             DateTime           @default(now())
+  tipoEgreso        TipoEgreso
+  subcategoria      String?
+  numeroComprobante String?
+  proveedor         String?
+  ruc               String?
+  observaciones     String
+  monto             Decimal            @db.Decimal(10, 2)
+  ticketAnuladoId   Int?
+  cajaDiariaId      Int
+  cajaDiaria         CajaDiaria         @relation(fields: [cajaDiariaId], references: [id])
+  
+  // Auditoría
+  usuarioEgresoId   Int
+  usuarioEgreso     Usuario            @relation("UsuarioEgreso", fields: [usuarioEgresoId], references: [id])
+  
+  // Relación con Liquidación (para egresos de tipo COMISION)
+  liquidacion       LiquidacionMedico? @relation("EgresoLiquidacion")
+  
+  creadoEn          DateTime           @default(now())
+
+  @@index([fecha])
+  @@index([cajaDiariaId])
+  @@map("egresos")
+}
+
+model Deposito {
+  id              Int        @id @default(autoincrement())
+  fecha           DateTime   @default(now())
+  banco           String
+  numeroOperacion String
+  concepto        String
+  monto           Decimal    @db.Decimal(10, 2)
+  cajaDiariaId    Int
+  cajaDiaria      CajaDiaria @relation(fields: [cajaDiariaId], references: [id])
+  creadoEn        DateTime   @default(now())
+
+  @@index([fecha])
+  @@index([cajaDiariaId])
+  @@map("depositos")
+}
+
+model Dieta {
+  id            Int        @id @default(autoincrement())
+  fecha         DateTime   @default(now())
+  desayunoCant  Int        @default(0)
+  almuerzoCant  Int        @default(0)
+  cenaCant      Int        @default(0)
+  observaciones String?
+  monto         Decimal    @db.Decimal(10, 2)
+  cajaDiariaId  Int
+  cajaDiaria    CajaDiaria @relation(fields: [cajaDiariaId], references: [id])
+  creadoEn      DateTime   @default(now())
+
+  @@index([fecha])
+  @@index([cajaDiariaId])
+  @@map("dietas")
+}
+
+model AlquilerEspacio {
+  id               Int               @id @default(autoincrement())
+  nombre           String            // Nombre del espacio (Consultorio, Quirófano, etc)
+  fechaInicio      DateTime          @db.Date
+  fechaFin         DateTime          @db.Date
+  precioTotal      Decimal           @db.Decimal(10, 2)
+  estado           EstadoAlquiler    @default(ACTIVO)
+  arrendatario     String            // Nombre del tercero que alquila
+  contacto         String?           // Teléfono o email del arrendatario
+  observaciones    String?
+  cajaDiariaId     Int
+  cajaDiaria       CajaDiaria        @relation(fields: [cajaDiariaId], references: [id])
+  
+  // Auditoría
+  usuarioCreadorId Int
+  usuarioCreador   Usuario           @relation("UsuarioCreadorAlquiler", fields: [usuarioCreadorId], references: [id])
+  creadoEn         DateTime          @default(now())
+
+  @@index([fechaInicio, fechaFin])
+  @@index([estado])
+  @@map("alquileres_espacios")
+}
+
+model ComprobantePagoMedico {
+  id                     Int                @id @default(autoincrement())
+  medicoId               Int
+  medico                 Medico             @relation("MedicoPago", fields: [medicoId], references: [id])
+  fecha                  DateTime           @default(now())
+  periodoInicio          DateTime           @db.Date
+  periodoFin             DateTime           @db.Date
+  montoTotal             Decimal            @db.Decimal(10, 2)
+  montoDescuento         Decimal            @default(0.00) @db.Decimal(10, 2)
+  montoNeto              Decimal            @db.Decimal(10, 2)
+  cantidadServicios      Int
+  estado                 EstadoComprobante  @default(BORRADOR)
+  firmaDigital           String?            // Base64 o ruta de la firma
+  documentoPdfPath       String?            // Ruta al archivo PDF generado
+  observaciones          String?
+  cajaDiariaId           Int?
+  cajaDiaria             CajaDiaria?        @relation("CajaPagoMedico", fields: [cajaDiariaId], references: [id])
+  
+  // Auditoría
+  usuarioCreadorId       Int
+  usuarioCreador         Usuario            @relation("UsuarioCreadorComprobante", fields: [usuarioCreadorId], references: [id])
+  creadoEn               DateTime           @default(now())
+  actualizadoEn          DateTime           @updatedAt
+
+  @@index([medicoId, fecha])
+  @@index([estado])
+  @@map("comprobantes_pago_medicos")
+}
+
