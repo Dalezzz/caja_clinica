@@ -8,7 +8,7 @@ interface LoginProps {
     nombre: string;
     usuario: string;
     rol: "ADMINISTRADOR" | "RECEPCIONISTA";
-  }) => void;
+  }, keepMeLoggedIn: boolean) => void;
 }
 
 /* Estilos inline para bypassear el CSS global que fuerza bg-white en inputs */
@@ -35,6 +35,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [keepMeLoggedIn, setKeepMeLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -49,8 +50,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
     try {
       const response = await api.login<any>(username.trim(), password);
       setAuthToken(response.access_token);
-      localStorage.setItem("currentUser", JSON.stringify(response.usuario));
-      onLoginSuccess(response.usuario);
+      onLoginSuccess(response.usuario, keepMeLoggedIn);
     } catch {
       setError("Usuario o contraseña incorrectos");
     } finally {
@@ -294,6 +294,31 @@ export function Login({ onLoginSuccess }: LoginProps) {
                   </button>
                 </div>
               </div>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  marginTop: "8px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={keepMeLoggedIn}
+                  onChange={(e) => setKeepMeLoggedIn(e.target.checked)}
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    accentColor: "#10b981",
+                    cursor: "pointer",
+                  }}
+                />
+                <span style={{ fontSize: "12px", color: "#a1a1aa", fontWeight: 500 }}>
+                  Mantener mi sesión iniciada
+                </span>
+              </label>
 
               {/* Botón submit */}
               <button

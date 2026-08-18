@@ -54,7 +54,27 @@ import { ReportesPanel } from "./components/ReportesPanel";
 import { Login } from "./components/Login";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>("pos");
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const path = window.location.pathname.replace("/", "");
+    return (path as TabType) || "pos";
+  });
+
+  useEffect(() => {
+    const currentPath = window.location.pathname.replace("/", "");
+    if (currentPath !== activeTab) {
+      window.history.pushState(null, "", `/${activeTab}`);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace("/", "");
+      if (path) setActiveTab(path as TabType);
+      else setActiveTab("pos");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Authentication & Admin Mode State
   const [currentUser, setCurrentUser] = useState<{
@@ -64,7 +84,22 @@ function App() {
     rol: "ADMINISTRADOR" | "RECEPCIONISTA";
   } | null>(() => {
     const saved = localStorage.getItem("currentUser");
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    
+    const keepMeLoggedIn = localStorage.getItem("keepMeLoggedIn") === "true";
+    if (keepMeLoggedIn) {
+      return JSON.parse(saved);
+    }
+    
+    const loginDate = localStorage.getItem("loginDate");
+    const today = new Date().toDateString();
+    if (loginDate === today) {
+      return JSON.parse(saved);
+    } else {
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("loginDate");
+      return null;
+    }
   });
   const [showAdminModeModal, setShowAdminModeModal] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
@@ -150,6 +185,8 @@ function App() {
   const handleLogout = () => {
     setAuthToken(null);
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("loginDate");
+    localStorage.removeItem("keepMeLoggedIn");
     setCurrentUser(null);
   };
 
@@ -988,7 +1025,12 @@ function App() {
   };
 
   if (!currentUser) {
-    return <Login onLoginSuccess={(user) => setCurrentUser(user)} />;
+    return <Login onLoginSuccess={(user, keepMeLoggedIn) => {
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      localStorage.setItem("keepMeLoggedIn", String(keepMeLoggedIn));
+      localStorage.setItem("loginDate", new Date().toDateString());
+      setCurrentUser(user);
+    }} />;
   }
 
   return (
