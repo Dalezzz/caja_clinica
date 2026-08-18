@@ -23,8 +23,13 @@ import { ComprobantePagoMedicoModule } from './comprobante-pago-medico/comproban
 import { ReportesModule } from './reportes/reportes.module';
 import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
 
+import { ScheduleModule } from '@nestjs/schedule';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
+
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
+    WhatsappModule,
     ThrottlerModule.forRoot([{ ttl: 60, limit: 120 }]),
     PrismaModule,
     ProcedenciasModule,

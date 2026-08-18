@@ -187,13 +187,15 @@ export interface ComprobantePagoMedico {
 }
 
 export interface AjustesWhatsApp {
-  id: number;
   whatsappEnabled: boolean;
   whatsappNumeroNegocio: string;
   whatsappGerentes: string;
   whatsappProvider: "twilio" | "whatsapp_business" | "custom_api" | "dummy";
   whatsappToken: string;
   whatsappApiUrl: string;
+  whatsappCronTime: string;
+  whatsappFrecuencia: string;
+  whatsappAlCierre: boolean;
   actualizadoEn?: string;
 }
 
@@ -626,6 +628,22 @@ const api = {
     ajustes: Partial<AjustesWhatsApp>,
   ): Promise<AjustesWhatsApp> {
     return this.patch("reportes/configuracion", ajustes);
+  },
+
+  async getWhatsappStatus(): Promise<{ status: string; qr?: string }> {
+    return this.get("whatsapp/status");
+  },
+
+  async whatsappLogout(): Promise<{ success: boolean }> {
+    return this.post("whatsapp/logout", {});
+  },
+
+  async getMissedReports(): Promise<any> {
+    return this.get("whatsapp/missed");
+  },
+
+  async sendMissedReports(): Promise<any> {
+    return this.post("whatsapp/send-missed", {});
   },
 };
 

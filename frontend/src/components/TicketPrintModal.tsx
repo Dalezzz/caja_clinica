@@ -10,7 +10,7 @@ export function TicketPrintModal({ ticket, onClose }: TicketPrintModalProps) {
   if (!ticket) return null;
 
   return (
-    <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-[2px] z-[60] flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 border border-zinc-200 max-w-md w-full space-y-4 shadow-lg animate-in fade-in-50 zoom-in-95">
         <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
           <h3 className="font-semibold text-zinc-900 text-xs flex items-center gap-2">

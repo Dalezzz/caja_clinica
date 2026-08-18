@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { EstadisticasMedicoService } from '../estadisticas-medico/estadisticas-medico.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 export interface ConfiguracionWhatsApp {
   enabled: boolean;
@@ -9,6 +10,9 @@ export interface ConfiguracionWhatsApp {
   proveedorAPI: 'twilio' | 'whatsapp_business' | 'custom_api' | 'dummy';
   whatsappToken: string;
   whatsappApiUrl: string;
+  whatsappCronTime: string;
+  whatsappFrecuencia: string;
+  whatsappAlCierre: boolean;
 }
 
 @Injectable()
@@ -16,6 +20,7 @@ export class WhatsAppReporterService {
   constructor(
     private estadisticasService: EstadisticasMedicoService,
     private prisma: PrismaService,
+    private whatsappBot: WhatsappService,
   ) {}
 
   async obtenerAjustes() {
@@ -32,6 +37,9 @@ export class WhatsAppReporterService {
           whatsappProvider: process.env.WHATSAPP_PROVIDER || 'dummy',
           whatsappToken: '',
           whatsappApiUrl: '',
+          whatsappCronTime: '19:30',
+          whatsappFrecuencia: 'diario',
+          whatsappAlCierre: false,
         },
       });
     }
@@ -49,6 +57,9 @@ export class WhatsAppReporterService {
         whatsappProvider: data.whatsappProvider || 'dummy',
         whatsappToken: data.whatsappToken || '',
         whatsappApiUrl: data.whatsappApiUrl || '',
+        whatsappCronTime: data.whatsappCronTime || '19:30',
+        whatsappFrecuencia: data.whatsappFrecuencia || 'diario',
+        whatsappAlCierre: data.whatsappAlCierre === true || data.whatsappAlCierre === 'true',
       },
       create: {
         id: 1,
@@ -59,6 +70,9 @@ export class WhatsAppReporterService {
         whatsappProvider: data.whatsappProvider || 'dummy',
         whatsappToken: data.whatsappToken || '',
         whatsappApiUrl: data.whatsappApiUrl || '',
+        whatsappCronTime: data.whatsappCronTime || '19:30',
+        whatsappFrecuencia: data.whatsappFrecuencia || 'diario',
+        whatsappAlCierre: data.whatsappAlCierre === true || data.whatsappAlCierre === 'true',
       },
     });
   }
@@ -78,6 +92,9 @@ export class WhatsAppReporterService {
         proveedorAPI: dbAjustes.whatsappProvider as any,
         whatsappToken: dbAjustes.whatsappToken,
         whatsappApiUrl: dbAjustes.whatsappApiUrl,
+        whatsappCronTime: dbAjustes.whatsappCronTime || '19:30',
+        whatsappFrecuencia: dbAjustes.whatsappFrecuencia || 'diario',
+        whatsappAlCierre: dbAjustes.whatsappAlCierre || false,
       };
     }
     return {
@@ -90,6 +107,9 @@ export class WhatsAppReporterService {
       proveedorAPI: (process.env.WHATSAPP_PROVIDER || 'dummy') as any,
       whatsappToken: '',
       whatsappApiUrl: '',
+      whatsappCronTime: '19:30',
+      whatsappFrecuencia: 'diario',
+      whatsappAlCierre: false,
     };
   }
 
@@ -350,8 +370,18 @@ ${ranking
     mensaje: string,
     config: ConfiguracionWhatsApp,
   ) {
-    console.log(`[DUMMY] Mensajes WhatsApp a +${numero}:\n${mensaje}`);
-    return { status: 'simulado', numero, mensaje };
+    try {
+      const status = this.whatsappBot.getStatus();
+      if (status.status !== 'connected') {
+         throw new Error("El Bot Local no está conectado o el QR no ha sido escaneado. Por favor, conéctalo en la pestaña de Configuración > WhatsApp.");
+      }
+      const jid = `${numero}@s.whatsapp.net`;
+      await this.whatsappBot.sendMessage(jid, mensaje);
+      return { status: 'enviado_bot_local', numero };
+    } catch (error: any) {
+      console.error(`[LOCAL_BOT Error] Falló el envío a +${numero}:`, error);
+      throw new Error(error.message);
+    }
   }
 
   private getNombreMes(mes: number): string {

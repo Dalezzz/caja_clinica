@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Receipt, X } from "lucide-react";
 import type { Medico, Ticket } from "../api";
 
@@ -46,6 +47,22 @@ export function HistoryModal({
   onPrintTicket,
   onAnularTicket,
 }: HistoryModalProps) {
+  const [localSearch, setLocalSearch] = useState(historySearch);
+
+  useEffect(() => {
+    setLocalSearch(historySearch);
+  }, [historySearch, isOpen]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (localSearch !== historySearch) {
+        setHistorySearch(localSearch);
+        setHistoryCurrentPage(1);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [localSearch, historySearch, setHistorySearch, setHistoryCurrentPage]);
+
   if (!isOpen) return null;
 
   const filteredTickets = tickets.filter((t) => {
@@ -129,11 +146,8 @@ export function HistoryModal({
             <input
               type="text"
               placeholder="Ej. Juan Perez, 2026-07-30..."
-              value={historySearch}
-              onChange={(e) => {
-                setHistorySearch(e.target.value);
-                setHistoryCurrentPage(1);
-              }}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="h-8 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
             />
           </div>

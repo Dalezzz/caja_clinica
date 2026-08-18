@@ -56,6 +56,12 @@ export function AppSidebar({
       badge: ticketCount,
       group: "core",
     },
+    {
+      id: "comprobantes",
+      label: "Comprobantes Médicos",
+      icon: FileText,
+      group: "core",
+    },
     { id: "cierre", label: "Arqueo de Caja", icon: Wallet, group: "core" },
     {
       id: "egresos",
@@ -63,42 +69,36 @@ export function AppSidebar({
       icon: TrendingUp,
       group: "core",
     },
-    { id: "alquileres", label: "Alquileres", icon: Building, group: "nuevos" },
+    { id: "alquileres", label: "Alquileres", icon: Building, group: "avanzada" },
     {
-      id: "comprobantes",
-      label: "Comprobantes Médicos",
-      icon: FileText,
-      group: "nuevos",
+      id: "liquidaciones",
+      label: "Liquidación Médicos",
+      icon: UserCheck,
+      group: "avanzada",
     },
     {
       id: "estadisticas",
       label: "Estadísticas",
       icon: Stethoscope,
-      group: "nuevos",
+      group: "avanzada",
     },
     {
       id: "reportes",
       label: "Reportes WhatsApp",
       icon: MessageCircle,
-      group: "nuevos",
+      group: "avanzada",
+    },
+    {
+      id: "tarifario",
+      label: "Tarifario Oficial",
+      icon: Layers,
+      group: "admin",
     },
     {
       id: "importer",
       label: "Importador Excel",
       icon: FileSpreadsheet,
       badge: "Masivo",
-      group: "admin",
-    },
-    {
-      id: "liquidaciones",
-      label: "Liquidación Médicos",
-      icon: UserCheck,
-      group: "admin",
-    },
-    {
-      id: "tarifario",
-      label: "Tarifario Oficial",
-      icon: Layers,
       group: "admin",
     },
     {
@@ -111,7 +111,7 @@ export function AppSidebar({
 
   const groups = [
     { key: "core", label: "Operaciones" },
-    { key: "nuevos", label: "Gestión Avanzada" },
+    { key: "avanzada", label: "Gestión Avanzada" },
     { key: "admin", label: "Administración" },
   ];
 

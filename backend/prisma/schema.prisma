@@ -95,6 +95,7 @@ model Paciente {
 
   @@index([nombre])
   @@index([celular])
+  @@index([numeroHistoriaClinica])
   @@map("pacientes")
 }
 
@@ -358,6 +359,10 @@ model Ajustes {
   whatsappProvider      String   @default("dummy")
   whatsappToken         String   @default("")
   whatsappApiUrl        String   @default("")
+  whatsappCronTime      String   @default("19:30")
+  whatsappUltimoEnvio   DateTime?
+  whatsappAlCierre      Boolean  @default(false)
+  whatsappFrecuencia    String   @default("diario")
   actualizadoEn         DateTime @updatedAt
 
   @@map("ajustes")

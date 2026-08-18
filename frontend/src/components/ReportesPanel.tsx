@@ -165,20 +165,6 @@ Accede a detalles en el sistema.`;
           Envía resúmenes automáticos a los dueños y gerentes de la clínica
         </p>
 
-        {/* Aviso modo */}
-        <div className="mt-3 flex items-start gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-3 py-2.5 rounded-md">
-          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-semibold">Modo configuración:</span> Los
-            mensajes se envían según el proveedor configurado en el servidor (
-            <code className="bg-blue-100 px-1 rounded text-[10px]">
-              WHATSAPP_PROVIDER
-            </code>
-            ). En modo{" "}
-            <code className="bg-blue-100 px-1 rounded text-[10px]">dummy</code>,
-            los mensajes se imprimen en los logs del servidor.
-          </div>
-        </div>
       </div>
 
       {/* Alerts */}
