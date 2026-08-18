@@ -1,4 +1,7 @@
-export const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+export const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
 
 export function getRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -15,7 +18,9 @@ export function getAllowedOrigins(): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return configured && configured.length > 0 ? configured : DEFAULT_ALLOWED_ORIGINS;
+  return configured && configured.length > 0
+    ? configured
+    : DEFAULT_ALLOWED_ORIGINS;
 }
 
 export function getJwtSecretOrThrow(): string {

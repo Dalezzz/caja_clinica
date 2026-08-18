@@ -17,9 +17,12 @@ export class EgresosService {
       throw new NotFoundException('No hay caja diaria abierta');
     }
 
-    let usuarioEgresoId = (createEgresoDto as any).usuarioEgresoId as number | undefined;
+    let usuarioEgresoId = (createEgresoDto as any).usuarioEgresoId as
+      number | undefined;
     if (!usuarioEgresoId) {
-      const admin = await this.prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+      const admin = await this.prisma.usuario.findFirst({
+        orderBy: { id: 'asc' },
+      });
       usuarioEgresoId = admin?.id || 1;
     }
 

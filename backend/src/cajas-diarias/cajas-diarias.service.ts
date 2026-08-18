@@ -8,10 +8,13 @@ export class CajasDiariasService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCajasDiariaDto: CreateCajasDiariaDto) {
-    let usuarioAperturaId = (createCajasDiariaDto as any).usuarioAperturaId as number | undefined;
+    let usuarioAperturaId = (createCajasDiariaDto as any).usuarioAperturaId as
+      number | undefined;
 
     if (!usuarioAperturaId) {
-      const admin = await this.prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+      const admin = await this.prisma.usuario.findFirst({
+        orderBy: { id: 'asc' },
+      });
       usuarioAperturaId = admin?.id || 1;
     }
 
@@ -55,13 +58,20 @@ export class CajasDiariasService {
     });
   }
 
-  async closeCaja(id: number, montoReal: number, observaciones?: string, usuarioCierreId?: number) {
+  async closeCaja(
+    id: number,
+    montoReal: number,
+    observaciones?: string,
+    usuarioCierreId?: number,
+  ) {
     const caja = await this.prisma.cajaDiaria.findUnique({ where: { id } });
     if (!caja) throw new NotFoundException('Caja no encontrada');
 
     let cierreUserId = usuarioCierreId;
     if (!cierreUserId) {
-      const admin = await this.prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+      const admin = await this.prisma.usuario.findFirst({
+        orderBy: { id: 'asc' },
+      });
       cierreUserId = admin?.id || 1;
     }
 

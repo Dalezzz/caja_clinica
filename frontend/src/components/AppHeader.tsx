@@ -1,6 +1,6 @@
-import { Wallet } from 'lucide-react';
-import type { CajaDiaria } from '../api';
-import type { TabType } from '../types';
+import { Wallet } from "lucide-react";
+import type { CajaDiaria } from "../api";
+import type { TabType } from "../types";
 
 interface AppHeaderProps {
   activeTab: TabType;
@@ -9,20 +9,25 @@ interface AppHeaderProps {
   onOpenCaja: () => void;
 }
 
-export function AppHeader({ activeTab, caja, currentTime, onOpenCaja }: AppHeaderProps) {
+export function AppHeader({
+  activeTab,
+  caja,
+  currentTime,
+  onOpenCaja,
+}: AppHeaderProps) {
   const titleMap: Record<TabType, string> = {
-    pos: 'Admisión & Ventas POS',
-    cola: 'Cola de pacientes',
-    cierre: 'Arqueo de Caja',
-    egresos: 'Egresos & Gastos',
-    importer: 'Importador Excel',
-    liquidaciones: 'Liquidación Médica',
-    tarifario: 'Tarifario de Servicios',
-    admin: 'Configuración & Admin',
-    alquileres: 'Alquileres de Espacios',
-    comprobantes: 'Comprobantes de Pago Médico',
-    estadisticas: 'Estadísticas de Médicos',
-    reportes: 'Reportes por WhatsApp',
+    pos: "Admisión & Ventas POS",
+    cola: "Cola de pacientes",
+    cierre: "Arqueo de Caja",
+    egresos: "Egresos & Gastos",
+    importer: "Importador Excel",
+    liquidaciones: "Liquidación Médica",
+    tarifario: "Tarifario de Servicios",
+    admin: "Configuración & Admin",
+    alquileres: "Alquileres de Espacios",
+    comprobantes: "Comprobantes de Pago Médico",
+    estadisticas: "Estadísticas de Médicos",
+    reportes: "Reportes por WhatsApp",
   };
 
   return (
@@ -39,16 +44,26 @@ export function AppHeader({ activeTab, caja, currentTime, onOpenCaja }: AppHeade
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
               </span>
-              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">TURNO ACTIVO</span>
+              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+                TURNO ACTIVO
+              </span>
             </div>
             <div className="h-5 w-px bg-zinc-250"></div>
             <div className="text-right">
-              <div className="text-[9px] text-zinc-400 uppercase font-medium">Efectivo Esperado</div>
-              <div className="text-sm font-semibold text-zinc-950">S/ {Number(caja.montoEfectivoEsperado).toFixed(2)}</div>
+              <div className="text-[9px] text-zinc-400 uppercase font-medium">
+                Efectivo Esperado
+              </div>
+              <div className="text-sm font-semibold text-zinc-950">
+                S/ {Number(caja.montoEfectivoEsperado).toFixed(2)}
+              </div>
             </div>
             <div className="text-right border-l border-zinc-200 pl-3">
-              <div className="text-[9px] text-zinc-400 uppercase font-medium">Digital (Yape/POS)</div>
-              <div className="text-sm font-semibold text-zinc-800">S/ {Number(caja.montoDigitalEsperado).toFixed(2)}</div>
+              <div className="text-[9px] text-zinc-400 uppercase font-medium">
+                Digital (Yape/POS)
+              </div>
+              <div className="text-sm font-semibold text-zinc-800">
+                S/ {Number(caja.montoDigitalEsperado).toFixed(2)}
+              </div>
             </div>
           </div>
         ) : (

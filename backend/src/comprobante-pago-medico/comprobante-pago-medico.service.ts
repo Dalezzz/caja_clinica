@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateComprobantePagoMedicoDto, FirmarComprobantePagoDto } from './dto/create-comprobante-pago.dto';
+import {
+  CreateComprobantePagoMedicoDto,
+  FirmarComprobantePagoDto,
+} from './dto/create-comprobante-pago.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PdfGeneratorService } from '../pdf-generator/pdf-generator.service';
 
@@ -17,7 +24,9 @@ export class ComprobantePagoMedicoService {
   ) {
     let creadorId = usuarioCreadorId;
     if (!creadorId) {
-      const admin = await this.prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+      const admin = await this.prisma.usuario.findFirst({
+        orderBy: { id: 'asc' },
+      });
       creadorId = admin?.id || 1;
     }
     // Validar que exista el médico
@@ -54,16 +63,22 @@ export class ComprobantePagoMedicoService {
       },
     });
 
+    // Calcular montoTotal seguro basado en los tickets obtenidos de la BD
+    const montoTotalCalculado = tickets.reduce(
+      (acc, t) => acc + Number(t.montoMedico),
+      0,
+    );
+
     // Crear comprobante
     const montoDescuento = createComprobantePagoMedicoDto.montoDescuento || 0;
-    const montoNeto = Number(createComprobantePagoMedicoDto.montoTotal) - montoDescuento;
+    const montoNeto = montoTotalCalculado - montoDescuento;
 
     const comprobante = await this.prisma.comprobantePagoMedico.create({
       data: {
         medicoId: createComprobantePagoMedicoDto.medicoId,
         periodoInicio: new Date(createComprobantePagoMedicoDto.periodoInicio),
         periodoFin: new Date(createComprobantePagoMedicoDto.periodoFin),
-        montoTotal: new Decimal(createComprobantePagoMedicoDto.montoTotal),
+        montoTotal: new Decimal(montoTotalCalculado),
         montoDescuento: new Decimal(montoDescuento),
         montoNeto: new Decimal(montoNeto),
         cantidadServicios: tickets.length,
@@ -135,7 +150,11 @@ export class ComprobantePagoMedicoService {
     };
   }
 
-  async findByMedicoYPeriodo(medicoId: number, periodoInicio: Date, periodoFin: Date) {
+  async findByMedicoYPeriodo(
+    medicoId: number,
+    periodoInicio: Date,
+    periodoFin: Date,
+  ) {
     return this.prisma.comprobantePagoMedico.findFirst({
       where: {
         medicoId,
@@ -224,8 +243,8 @@ export class ComprobantePagoMedicoService {
     });
 
     // Extraer nombre del archivo del path
-    const pdfFilename = pdfPath.includes('\\') 
-      ? pdfPath.split('\\').pop() 
+    const pdfFilename = pdfPath.includes('\\')
+      ? pdfPath.split('\\').pop()
       : pdfPath.split('/').pop();
 
     // Actualizar comprobante con ruta del PDF
@@ -270,8 +289,16 @@ export class ComprobantePagoMedicoService {
     }
 
     const hoy = new Date();
-    const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    const finHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
+    const inicioHoy = new Date(
+      hoy.getFullYear(),
+      hoy.getMonth(),
+      hoy.getDate(),
+    );
+    const finHoy = new Date(
+      hoy.getFullYear(),
+      hoy.getMonth(),
+      hoy.getDate() + 1,
+    );
 
     // Buscar tickets del médico del día
     const tickets = await this.prisma.ticket.findMany({
@@ -285,10 +312,10 @@ export class ComprobantePagoMedicoService {
       },
     });
 
-    const montoTotal = tickets.reduce((sum, t) => sum + Number(t.montoMedico), 0);
-
     if (tickets.length === 0) {
-      throw new BadRequestException('No hay servicios o atenciones registradas para este médico el día de hoy');
+      throw new BadRequestException(
+        'No hay servicios o atenciones registradas para este médico el día de hoy',
+      );
     }
 
     return this.generarComprobante(
@@ -296,7 +323,6 @@ export class ComprobantePagoMedicoService {
         medicoId,
         periodoInicio: inicioHoy,
         periodoFin: finHoy,
-        montoTotal,
       },
       usuarioCreadorId,
     );

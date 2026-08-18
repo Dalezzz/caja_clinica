@@ -13,9 +13,6 @@ export class CreateComprobantePagoMedicoDto {
   @IsDate()
   periodoFin: Date;
 
-  @IsNumber()
-  montoTotal: number;
-
   @IsOptional()
   @IsNumber()
   montoDescuento?: number;

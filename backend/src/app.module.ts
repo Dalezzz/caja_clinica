@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,9 +25,7 @@ import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      { ttl: 60, limit: 120 },
-    ]),
+    ThrottlerModule.forRoot([{ ttl: 60, limit: 120 }]),
     PrismaModule,
     ProcedenciasModule,
     MedicosModule,
@@ -56,10 +55,9 @@ import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
     ];
     if (process.env.DISABLE_AUTH !== 'true') {
       providers.push({ provide: APP_GUARD, useClass: JwtAuthGuard });
+      providers.push({ provide: APP_GUARD, useClass: RolesGuard });
     }
     return providers;
   })(),
 })
 export class AppModule {}
-
-

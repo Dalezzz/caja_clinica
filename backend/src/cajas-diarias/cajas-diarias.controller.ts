@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { CajasDiariasService } from './cajas-diarias.service';
 import { CreateCajasDiariaDto } from './dto/create-cajas-diaria.dto';
@@ -9,7 +18,10 @@ export class CajasDiariasController {
   constructor(private readonly cajasDiariasService: CajasDiariasService) {}
 
   @Post()
-  create(@Req() req: Request, @Body() createCajasDiariaDto: CreateCajasDiariaDto) {
+  create(
+    @Req() req: Request,
+    @Body() createCajasDiariaDto: CreateCajasDiariaDto,
+  ) {
     try {
       const user: any = (req as any).user;
       if (user?.sub) (createCajasDiariaDto as any).usuarioAperturaId = user.sub;
@@ -33,7 +45,10 @@ export class CajasDiariasController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCajasDiariaDto: UpdateCajasDiariaDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCajasDiariaDto: UpdateCajasDiariaDto,
+  ) {
     return this.cajasDiariasService.update(+id, updateCajasDiariaDto);
   }
 
@@ -45,7 +60,12 @@ export class CajasDiariasController {
   ) {
     const user: any = (req as any).user;
     const usuarioCierreId = user?.sub;
-    return this.cajasDiariasService.closeCaja(+id, body.montoReal, body.observaciones, usuarioCierreId);
+    return this.cajasDiariasService.closeCaja(
+      +id,
+      body.montoReal,
+      body.observaciones,
+      usuarioCierreId,
+    );
   }
 
   @Delete(':id')

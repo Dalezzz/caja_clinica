@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EgresosService } from './egresos.service';
 import { CreateEgresoDto } from './dto/create-egreso.dto';
 import { UpdateEgresoDto } from './dto/update-egreso.dto';

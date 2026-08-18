@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Req, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Req,
+  Query,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AlquileresService } from './alquileres.service';
 import { CreateAlquilerDto } from './dto/create-alquiler.dto';
@@ -8,7 +17,10 @@ export class AlquileresController {
   constructor(private readonly alquileresService: AlquileresService) {}
 
   @Post()
-  async create(@Req() req: Request, @Body() createAlquilerDto: CreateAlquilerDto) {
+  async create(
+    @Req() req: Request,
+    @Body() createAlquilerDto: CreateAlquilerDto,
+  ) {
     const usuario: any = (req as any).user;
     const usuarioCreadorId = usuario?.sub;
 
@@ -26,7 +38,10 @@ export class AlquileresController {
   }
 
   @Get('ingresos/:inicio/:fin')
-  async getIngresosPeriodo(@Param('inicio') inicio: string, @Param('fin') fin: string) {
+  async getIngresosPeriodo(
+    @Param('inicio') inicio: string,
+    @Param('fin') fin: string,
+  ) {
     return this.alquileresService.obtenerIngresosPorAlquileresPeriodo(
       new Date(inicio),
       new Date(fin),

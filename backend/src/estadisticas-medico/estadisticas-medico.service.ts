@@ -80,13 +80,17 @@ export class EstadisticasMedicoService {
       ...stat,
       mes,
       anio,
-      porcentajeGeneral: totalClinica > 0 ? (stat.montoPaciente / totalClinica) * 100 : 0,
+      porcentajeGeneral:
+        totalClinica > 0 ? (stat.montoPaciente / totalClinica) * 100 : 0,
     }));
 
     return resultado.sort((a, b) => b.montoPaciente - a.montoPaciente);
   }
 
-  async obtenerRankingMedicosMes(mes: number, anio: number): Promise<RankingMedicos[]> {
+  async obtenerRankingMedicosMes(
+    mes: number,
+    anio: number,
+  ): Promise<RankingMedicos[]> {
     const stats = await this.obtenerEstadisticaMensual(mes, anio);
 
     return stats.map((stat, index) => ({
@@ -169,12 +173,20 @@ export class EstadisticasMedicoService {
         },
       });
 
-      const montoPaciente = tickets.reduce((sum, t) => sum + Number(t.montoPaciente), 0);
-      const montoMedico = tickets.reduce((sum, t) => sum + Number(t.montoMedico), 0);
+      const montoPaciente = tickets.reduce(
+        (sum, t) => sum + Number(t.montoPaciente),
+        0,
+      );
+      const montoMedico = tickets.reduce(
+        (sum, t) => sum + Number(t.montoMedico),
+        0,
+      );
 
       resultado.push({
         mes,
-        nombreMes: new Date(anio, mes - 1).toLocaleString('es-PE', { month: 'long' }),
+        nombreMes: new Date(anio, mes - 1).toLocaleString('es-PE', {
+          month: 'long',
+        }),
         totalServicios: tickets.length,
         montoPaciente,
         montoMedico,
@@ -186,14 +198,18 @@ export class EstadisticasMedicoService {
 
   async obtenerCrecimientoMensual(medicoId: number, mes: number, anio: number) {
     const mesActual = await this.obtenerEstadisticaMensual(mes, anio);
-    const mesPasado = await this.obtenerEstadisticaMensual(mes === 1 ? 12 : mes - 1, mes === 1 ? anio - 1 : anio);
+    const mesPasado = await this.obtenerEstadisticaMensual(
+      mes === 1 ? 12 : mes - 1,
+      mes === 1 ? anio - 1 : anio,
+    );
 
     const statsActual = mesActual.find((s) => s.medicoId === medicoId);
     const statsPasado = mesPasado.find((s) => s.medicoId === medicoId);
 
     const montoPasado = statsPasado?.montoPaciente || 0;
     const montoActual = statsActual?.montoPaciente || 0;
-    const crecimiento = montoPasado > 0 ? ((montoActual - montoPasado) / montoPasado) * 100 : 0;
+    const crecimiento =
+      montoPasado > 0 ? ((montoActual - montoPasado) / montoPasado) * 100 : 0;
 
     return {
       medicoId,

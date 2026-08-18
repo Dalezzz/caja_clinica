@@ -13,7 +13,12 @@ export function cleanDoctorName(name: string): string {
 export function standardizeSpecialty(esp: string): string {
   if (!esp) return 'Medicina General';
 
-  const norm = esp.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim().replace(/\s+/g, ' ');
+  const norm = esp
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, ' ');
   const map: Record<string, string> = {
     'MEDICINA GENERAL': 'Medicina General',
     GINECOLOGIA: 'Ginecología',
@@ -39,10 +44,15 @@ export function standardizeSpecialty(esp: string): string {
 export function standardizeCategory(cat: string): string {
   if (!cat) return 'Consulta';
 
-  const norm = cat.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim().replace(/\s+/g, ' ');
+  const norm = cat
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, ' ');
   const map: Record<string, string> = {
     CONSULTA: 'Consulta',
-    'ECOGRAFIA': 'Ecografía',
+    ECOGRAFIA: 'Ecografía',
     'ECOGRAFIA/S': 'Ecografía',
     ECOGRAFIAS: 'Ecografía',
     'RAYOS X': 'Rayos X',

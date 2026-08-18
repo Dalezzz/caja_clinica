@@ -126,6 +126,7 @@ model Tarifa {
   comisionTecnico   Decimal  @default(0.00) @db.Decimal(10, 2)
   creadoEn          DateTime @default(now())
   tickets           Ticket[]
+  ticketItems       TicketItem[]
 
   @@map("tarifas")
 }
@@ -199,8 +200,13 @@ model Ticket {
   certificadoNumero          String?
   solicitanteHistoriaClinica String?
   estado                     EstadoTicket       @default(ACTIVO)
+  estadoAtencion             String             @default("ESPERA")
+  consultorio                String?
   cajaDiariaId               Int
   cajaDiaria                 CajaDiaria         @relation(fields: [cajaDiariaId], references: [id])
+  
+  // Detalle de Servicios (Nuevos Items de Ticket)
+  items                      TicketItem[]
   
   // Integración SUNAT (Boletas)
   sunatEstado                EstadoSunat        @default(PENDIENTE)
@@ -342,5 +348,36 @@ model ComprobantePagoMedico {
   @@index([medicoId, fecha])
   @@index([estado])
   @@map("comprobantes_pago_medicos")
+}
+
+model Ajustes {
+  id                    Int      @id @default(1)
+  whatsappEnabled       Boolean  @default(false)
+  whatsappNumeroNegocio String   @default("")
+  whatsappGerentes      String   @default("")
+  whatsappProvider      String   @default("dummy")
+  whatsappToken         String   @default("")
+  whatsappApiUrl        String   @default("")
+  actualizadoEn         DateTime @updatedAt
+
+  @@map("ajustes")
+}
+
+model TicketItem {
+  id              Int      @id @default(autoincrement())
+  ticketId        Int
+  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  tarifaId        Int
+  tarifa          Tarifa   @relation(fields: [tarifaId], references: [id])
+  descripcion     String
+  cantidad        Int      @default(1)
+  precioUnitario  Decimal  @db.Decimal(10, 2)
+  comisionMedico  Decimal  @db.Decimal(10, 2)
+  comisionClinica Decimal  @db.Decimal(10, 2)
+  comisionTecnico Decimal  @db.Decimal(10, 2)
+  
+  @@index([ticketId])
+  @@index([tarifaId])
+  @@map("ticket_items")
 }
 

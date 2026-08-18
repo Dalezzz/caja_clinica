@@ -20,7 +20,10 @@ export class ProcedenciasService {
   }
 
   update(id: number, updateProcedenciaDto: UpdateProcedenciaDto) {
-    return this.prisma.procedencia.update({ where: { id }, data: updateProcedenciaDto });
+    return this.prisma.procedencia.update({
+      where: { id },
+      data: updateProcedenciaDto,
+    });
   }
 
   remove(id: number) {

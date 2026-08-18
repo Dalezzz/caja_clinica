@@ -1,7 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ComprobantePagoMedicoService } from './comprobante-pago-medico.service';
-import { CreateComprobantePagoMedicoDto, FirmarComprobantePagoDto } from './dto/create-comprobante-pago.dto';
+import {
+  CreateComprobantePagoMedicoDto,
+  FirmarComprobantePagoDto,
+} from './dto/create-comprobante-pago.dto';
 import { PdfGeneratorService } from '../pdf-generator/pdf-generator.service';
 
 @Controller('comprobantes-pago-medicos')
@@ -26,11 +38,17 @@ export class ComprobantePagoMedicoController {
   }
 
   @Post('generar-dia/:medicoId')
-  async generarComprobanteDia(@Req() req: Request, @Param('medicoId') medicoId: string) {
+  async generarComprobanteDia(
+    @Req() req: Request,
+    @Param('medicoId') medicoId: string,
+  ) {
     const usuario: any = (req as any).user;
     const usuarioCreadorId = usuario?.sub;
 
-    return this.comprobantePagoMedicoService.generarComprobanteDia(+medicoId, usuarioCreadorId);
+    return this.comprobantePagoMedicoService.generarComprobanteDia(
+      +medicoId,
+      usuarioCreadorId,
+    );
   }
 
   @Get()
@@ -64,14 +82,24 @@ export class ComprobantePagoMedicoController {
     const comprobante = await this.comprobantePagoMedicoService.findOne(+id);
 
     if (!comprobante.documentoPdfPath) {
-      return res.status(404).json({ error: 'PDF no generado. El comprobante debe ser firmado primero.' });
+      return res
+        .status(404)
+        .json({
+          error: 'PDF no generado. El comprobante debe ser firmado primero.',
+        });
     }
 
-    if (!this.pdfGeneratorService.existeComprobante(comprobante.documentoPdfPath)) {
-      return res.status(404).json({ error: 'Archivo PDF no encontrado en el servidor.' });
+    if (
+      !this.pdfGeneratorService.existeComprobante(comprobante.documentoPdfPath)
+    ) {
+      return res
+        .status(404)
+        .json({ error: 'Archivo PDF no encontrado en el servidor.' });
     }
 
-    const stream = this.pdfGeneratorService.obtenerStreamComprobante(comprobante.documentoPdfPath);
+    const stream = this.pdfGeneratorService.obtenerStreamComprobante(
+      comprobante.documentoPdfPath,
+    );
     const filename = `comprobante_${comprobante.id}_${comprobante.medico.nombre.replace(/\s+/g, '_')}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');

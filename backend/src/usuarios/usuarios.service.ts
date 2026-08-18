@@ -19,7 +19,12 @@ export class UsuariosService {
     });
   }
 
-  async create(nombre: string, usuario: string, contrasenaPlain: string, rol: RolUsuario): Promise<Usuario> {
+  async create(
+    nombre: string,
+    usuario: string,
+    contrasenaPlain: string,
+    rol: RolUsuario,
+  ): Promise<Usuario> {
     const contrasenaHash = await bcrypt.hash(contrasenaPlain, 10);
     return this.prisma.usuario.create({
       data: {

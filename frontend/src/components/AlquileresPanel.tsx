@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Building,
   Plus,
@@ -11,29 +11,29 @@ import {
   Phone,
   X,
   AlertCircle,
-} from 'lucide-react';
-import api, { AlquilerEspacio } from '../api';
+} from "lucide-react";
+import api, { AlquilerEspacio } from "../api";
 
 export function AlquileresPanel() {
   const [alquileres, setAlquileres] = useState<AlquilerEspacio[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroEstado, setFiltroEstado] = useState<string>('');
+  const [filtroEstado, setFiltroEstado] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    nombre: '',
-    fechaInicio: '',
-    fechaFin: '',
-    precioTotal: '',
-    arrendatario: '',
-    contacto: '',
-    observaciones: '',
+    nombre: "",
+    fechaInicio: "",
+    fechaFin: "",
+    precioTotal: "",
+    arrendatario: "",
+    contacto: "",
+    observaciones: "",
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const cargar = async () => {
     setLoading(true);
@@ -41,23 +41,38 @@ export function AlquileresPanel() {
       const data = await api.obtenerAlquileres();
       setAlquileres(data);
     } catch {
-      setError('No se pudo cargar los alquileres. Verifica la conexión con el servidor.');
+      setError(
+        "No se pudo cargar los alquileres. Verifica la conexión con el servidor.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    cargar();
+  }, []);
 
   const mostrar = (msg: string, isError = false) => {
-    if (isError) { setError(msg); setTimeout(() => setError(null), 4000); }
-    else { setSuccess(msg); setTimeout(() => setSuccess(null), 3500); }
+    if (isError) {
+      setError(msg);
+      setTimeout(() => setError(null), 4000);
+    } else {
+      setSuccess(msg);
+      setTimeout(() => setSuccess(null), 3500);
+    }
   };
 
   const handleCrear = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nombre || !form.fechaInicio || !form.fechaFin || !form.precioTotal || !form.arrendatario) {
-      mostrar('Completa todos los campos requeridos.', true);
+    if (
+      !form.nombre ||
+      !form.fechaInicio ||
+      !form.fechaFin ||
+      !form.precioTotal ||
+      !form.arrendatario
+    ) {
+      mostrar("Completa todos los campos requeridos.", true);
       return;
     }
     setSaving(true);
@@ -73,45 +88,69 @@ export function AlquileresPanel() {
       });
       setAlquileres((prev) => [nuevo, ...prev]);
       setShowModal(false);
-      setForm({ nombre: '', fechaInicio: '', fechaFin: '', precioTotal: '', arrendatario: '', contacto: '', observaciones: '' });
-      mostrar('Alquiler creado correctamente.');
-    } catch { mostrar('No se pudo crear el alquiler.', true); }
-    finally { setSaving(false); }
+      setForm({
+        nombre: "",
+        fechaInicio: "",
+        fechaFin: "",
+        precioTotal: "",
+        arrendatario: "",
+        contacto: "",
+        observaciones: "",
+      });
+      mostrar("Alquiler creado correctamente.");
+    } catch {
+      mostrar("No se pudo crear el alquiler.", true);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleFinalizar = async (id: number) => {
-    if (!window.confirm('¿Marcar este alquiler como finalizado?')) return;
+    if (!window.confirm("¿Marcar este alquiler como finalizado?")) return;
     try {
       const updated = await api.finalizarAlquiler(id);
       setAlquileres((prev) => prev.map((a) => (a.id === id ? updated : a)));
-      mostrar('Alquiler finalizado correctamente.');
-    } catch { mostrar('No se pudo finalizar el alquiler.', true); }
+      mostrar("Alquiler finalizado correctamente.");
+    } catch {
+      mostrar("No se pudo finalizar el alquiler.", true);
+    }
   };
 
   const handleCancelar = async (id: number) => {
-    if (!window.confirm('¿Cancelar este alquiler? Se revertirá el ingreso de caja.')) return;
+    if (
+      !window.confirm(
+        "¿Cancelar este alquiler? Se revertirá el ingreso de caja.",
+      )
+    )
+      return;
     try {
       const updated = await api.cancelarAlquiler(id);
       setAlquileres((prev) => prev.map((a) => (a.id === id ? updated : a)));
-      mostrar('Alquiler cancelado y monto revertido en caja.');
-    } catch { mostrar('No se pudo cancelar el alquiler.', true); }
+      mostrar("Alquiler cancelado y monto revertido en caja.");
+    } catch {
+      mostrar("No se pudo cancelar el alquiler.", true);
+    }
   };
 
-  const filtrados = filtroEstado ? alquileres.filter((a) => a.estado === filtroEstado) : alquileres;
-  const totalIngresos = alquileres.filter((a) => a.estado !== 'CANCELADO').reduce((s, a) => s + Number(a.precioTotal), 0);
+  const filtrados = filtroEstado
+    ? alquileres.filter((a) => a.estado === filtroEstado)
+    : alquileres;
+  const totalIngresos = alquileres
+    .filter((a) => a.estado !== "CANCELADO")
+    .reduce((s, a) => s + Number(a.precioTotal), 0);
 
   const estadoBadge = (estado: string) => {
     const map: Record<string, string> = {
-      ACTIVO: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-      FINALIZADO: 'bg-zinc-100 text-zinc-600 border border-zinc-200',
-      CANCELADO: 'bg-red-50 text-red-600 border border-red-200',
+      ACTIVO: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      FINALIZADO: "bg-zinc-100 text-zinc-600 border border-zinc-200",
+      CANCELADO: "bg-red-50 text-red-600 border border-red-200",
     };
-    return map[estado] || '';
+    return map[estado] || "";
   };
 
   const estadoIcon = (estado: string) => {
-    if (estado === 'ACTIVO') return <Clock className="h-3 w-3" />;
-    if (estado === 'FINALIZADO') return <CheckCircle className="h-3 w-3" />;
+    if (estado === "ACTIVO") return <Clock className="h-3 w-3" />;
+    if (estado === "FINALIZADO") return <CheckCircle className="h-3 w-3" />;
     return <XCircle className="h-3 w-3" />;
   };
 
@@ -125,7 +164,9 @@ export function AlquileresPanel() {
               <Building className="h-4 w-4 text-zinc-700" />
               Alquileres de Espacios
             </h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Control de alquileres de consultorio, quirófano y otros espacios</p>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Control de alquileres de consultorio, quirófano y otros espacios
+            </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -138,14 +179,37 @@ export function AlquileresPanel() {
         {/* KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
           {[
-            { label: 'Total alquileres', value: alquileres.length, color: 'text-zinc-900' },
-            { label: 'Activos', value: alquileres.filter((a) => a.estado === 'ACTIVO').length, color: 'text-emerald-700' },
-            { label: 'Finalizados', value: alquileres.filter((a) => a.estado === 'FINALIZADO').length, color: 'text-zinc-500' },
-            { label: 'Ingresos totales', value: `S/ ${totalIngresos.toFixed(2)}`, color: 'text-emerald-700' },
+            {
+              label: "Total alquileres",
+              value: alquileres.length,
+              color: "text-zinc-900",
+            },
+            {
+              label: "Activos",
+              value: alquileres.filter((a) => a.estado === "ACTIVO").length,
+              color: "text-emerald-700",
+            },
+            {
+              label: "Finalizados",
+              value: alquileres.filter((a) => a.estado === "FINALIZADO").length,
+              color: "text-zinc-500",
+            },
+            {
+              label: "Ingresos totales",
+              value: `S/ ${totalIngresos.toFixed(2)}`,
+              color: "text-emerald-700",
+            },
           ].map((kpi) => (
-            <div key={kpi.label} className="bg-zinc-50 border border-zinc-200 rounded-md p-3 text-center">
-              <div className={`text-base font-bold ${kpi.color}`}>{kpi.value}</div>
-              <div className="text-[10px] text-zinc-500 font-medium mt-0.5">{kpi.label}</div>
+            <div
+              key={kpi.label}
+              className="bg-zinc-50 border border-zinc-200 rounded-md p-3 text-center"
+            >
+              <div className={`text-base font-bold ${kpi.color}`}>
+                {kpi.value}
+              </div>
+              <div className="text-[10px] text-zinc-500 font-medium mt-0.5">
+                {kpi.label}
+              </div>
             </div>
           ))}
         </div>
@@ -166,16 +230,20 @@ export function AlquileresPanel() {
       {/* Filtros */}
       <div className="white-card rounded-lg p-4 border border-zinc-200 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Filtrar por estado:</span>
-          {['', 'ACTIVO', 'FINALIZADO', 'CANCELADO'].map((est) => (
+          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+            Filtrar por estado:
+          </span>
+          {["", "ACTIVO", "FINALIZADO", "CANCELADO"].map((est) => (
             <button
               key={est}
               onClick={() => setFiltroEstado(est)}
               className={`text-xs px-3 py-1 rounded-full border font-medium transition ${
-                filtroEstado === est ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-400'
+                filtroEstado === est
+                  ? "bg-zinc-900 text-white border-zinc-900"
+                  : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-400"
               }`}
             >
-              {est || 'Todos'}
+              {est || "Todos"}
             </button>
           ))}
         </div>
@@ -186,22 +254,37 @@ export function AlquileresPanel() {
         {loading ? (
           <div className="p-8 space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-zinc-100 rounded-md animate-pulse" />
+              <div
+                key={i}
+                className="h-12 bg-zinc-100 rounded-md animate-pulse"
+              />
             ))}
           </div>
         ) : filtrados.length === 0 ? (
           <div className="p-12 text-center text-zinc-400">
             <Building className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm font-medium">No hay alquileres registrados</p>
-            <p className="text-xs mt-1">Crea el primer alquiler usando el botón superior</p>
+            <p className="text-xs mt-1">
+              Crea el primer alquiler usando el botón superior
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="bg-zinc-50 border-b border-zinc-200">
                 <tr>
-                  {['Espacio / Campaña', 'Arrendatario', 'Período', 'Precio', 'Estado', 'Acciones'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">
+                  {[
+                    "Espacio / Campaña",
+                    "Arrendatario",
+                    "Período",
+                    "Precio",
+                    "Estado",
+                    "Acciones",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left font-semibold text-zinc-500 uppercase tracking-wider text-[10px]"
+                    >
                       {h}
                     </th>
                   ))}
@@ -211,8 +294,14 @@ export function AlquileresPanel() {
                 {filtrados.map((alq) => (
                   <tr key={alq.id} className="hover:bg-zinc-50 transition">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-zinc-900">{alq.nombre}</div>
-                      {alq.observaciones && <div className="text-zinc-400 text-[10px]">{alq.observaciones}</div>}
+                      <div className="font-semibold text-zinc-900">
+                        {alq.nombre}
+                      </div>
+                      {alq.observaciones && (
+                        <div className="text-zinc-400 text-[10px]">
+                          {alq.observaciones}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 text-zinc-700">
@@ -228,10 +317,11 @@ export function AlquileresPanel() {
                     <td className="px-4 py-3 text-zinc-600">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3 text-zinc-400" />
-                        {new Date(alq.fechaInicio).toLocaleDateString('es-PE')}
+                        {new Date(alq.fechaInicio).toLocaleDateString("es-PE")}
                       </div>
                       <div className="text-zinc-400 text-[10px]">
-                        hasta {new Date(alq.fechaFin).toLocaleDateString('es-PE')}
+                        hasta{" "}
+                        {new Date(alq.fechaFin).toLocaleDateString("es-PE")}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -241,13 +331,15 @@ export function AlquileresPanel() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${estadoBadge(alq.estado)}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${estadoBadge(alq.estado)}`}
+                      >
                         {estadoIcon(alq.estado)}
                         {alq.estado}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {alq.estado === 'ACTIVO' && (
+                      {alq.estado === "ACTIVO" && (
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleFinalizar(alq.id)}
@@ -263,7 +355,9 @@ export function AlquileresPanel() {
                           </button>
                         </div>
                       )}
-                      {alq.estado !== 'ACTIVO' && <span className="text-zinc-300 text-[10px]">—</span>}
+                      {alq.estado !== "ACTIVO" && (
+                        <span className="text-zinc-300 text-[10px]">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -281,7 +375,10 @@ export function AlquileresPanel() {
               <h3 className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
                 <Building className="h-4 w-4" /> Nuevo Alquiler de Espacio
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-zinc-400 hover:text-zinc-700 transition">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-zinc-400 hover:text-zinc-700 transition"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -295,68 +392,94 @@ export function AlquileresPanel() {
                     type="text"
                     placeholder="Ej: Consultorio A, Quirófano 1..."
                     value={form.nombre}
-                    onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, nombre: e.target.value }))
+                    }
                     className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Fecha Inicio *</label>
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                    Fecha Inicio *
+                  </label>
                   <input
                     type="date"
                     value={form.fechaInicio}
                     defaultValue={today}
-                    onChange={(e) => setForm((f) => ({ ...f, fechaInicio: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, fechaInicio: e.target.value }))
+                    }
                     className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-xs text-zinc-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Fecha Fin *</label>
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                    Fecha Fin *
+                  </label>
                   <input
                     type="date"
                     value={form.fechaFin}
-                    onChange={(e) => setForm((f) => ({ ...f, fechaFin: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, fechaFin: e.target.value }))
+                    }
                     className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-xs text-zinc-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Precio Total (S/) *</label>
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                    Precio Total (S/) *
+                  </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
                     value={form.precioTotal}
-                    onChange={(e) => setForm((f) => ({ ...f, precioTotal: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, precioTotal: e.target.value }))
+                    }
                     className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-xs text-zinc-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Arrendatario *</label>
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                    Arrendatario *
+                  </label>
                   <input
                     type="text"
                     placeholder="Nombre o empresa"
                     value={form.arrendatario}
-                    onChange={(e) => setForm((f) => ({ ...f, arrendatario: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, arrendatario: e.target.value }))
+                    }
                     className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-xs text-zinc-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Contacto</label>
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                    Contacto
+                  </label>
                   <input
                     type="text"
                     placeholder="+51 ..."
                     value={form.contacto}
-                    onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, contacto: e.target.value }))
+                    }
                     className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-xs text-zinc-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Observaciones</label>
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+                    Observaciones
+                  </label>
                   <textarea
                     rows={2}
                     placeholder="Notas adicionales..."
                     value={form.observaciones}
-                    onChange={(e) => setForm((f) => ({ ...f, observaciones: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, observaciones: e.target.value }))
+                    }
                     className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                   />
                 </div>
@@ -374,7 +497,7 @@ export function AlquileresPanel() {
                   disabled={saving}
                   className="flex-1 text-xs font-semibold px-4 py-2 bg-zinc-900 text-white rounded-md hover:bg-zinc-800 transition disabled:opacity-60"
                 >
-                  {saving ? 'Guardando...' : 'Crear Alquiler'}
+                  {saving ? "Guardando..." : "Crear Alquiler"}
                 </button>
               </div>
             </form>

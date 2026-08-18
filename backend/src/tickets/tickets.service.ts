@@ -7,37 +7,6 @@ import { UpdateTicketDto } from './dto/update-ticket.dto';
 export class TicketsService {
   constructor(private prisma: PrismaService) {}
 
-  calculateTicketTotals(items: TicketItemDto[], montoSolicitante = 0) {
-    const normalizedItems = (items || []).filter(Boolean);
-
-    const tarifaId = normalizedItems[0]?.tarifaId ?? null;
-    const montoPaciente = normalizedItems.reduce(
-      (sum, item) => sum + Number(item.precioUnitario || 0) * Number(item.cantidad || 1),
-      0,
-    );
-    const montoMedico = normalizedItems.reduce(
-      (sum, item) => sum + Number(item.comisionMedico || 0) * Number(item.cantidad || 1),
-      0,
-    );
-    const montoTecnico = normalizedItems.reduce(
-      (sum, item) => sum + Number(item.comisionTecnico || 0) * Number(item.cantidad || 1),
-      0,
-    );
-
-    const ajusteSolicitante = Math.min(
-      Math.max(0, Number(montoSolicitante || 0)),
-      Math.round(montoPaciente * 0.19),
-    );
-
-    return {
-      tarifaId,
-      montoPaciente,
-      montoMedico,
-      montoTecnico,
-      montoClinica: Math.max(0, montoPaciente - montoMedico - montoTecnico - ajusteSolicitante),
-    };
-  }
-
   async create(createTicketDto: CreateTicketDto) {
     const caja = await this.prisma.cajaDiaria.findFirst({
       where: { abierta: true },
@@ -48,30 +17,76 @@ export class TicketsService {
       throw new NotFoundException('No hay caja diaria abierta');
     }
 
-    const ticketItems = createTicketDto.items && createTicketDto.items.length > 0
-      ? createTicketDto.items
-      : [{
-          tarifaId: createTicketDto.tarifaId as number,
-          descripcion: createTicketDto.descripcionAdicional,
-          precioUnitario: 0,
-          cantidad: 1,
-          comisionMedico: 0,
-          comisionClinica: 0,
-          comisionTecnico: 0,
-        }];
+    const ticketItemsInput =
+      createTicketDto.items && createTicketDto.items.length > 0
+        ? createTicketDto.items
+        : [
+            {
+              tarifaId: createTicketDto.tarifaId as number,
+              descripcion: createTicketDto.descripcionAdicional,
+              cantidad: 1,
+            },
+          ];
 
-    const primaryTarifaId = ticketItems[0]?.tarifaId;
-    if (!primaryTarifaId) {
-      throw new NotFoundException('Tarifa no encontrada');
+    const tarifaIds = ticketItemsInput
+      .map((item) => item.tarifaId)
+      .filter(Boolean);
+    if (tarifaIds.length === 0) {
+      throw new NotFoundException('No se especificaron tarifas válidas');
     }
 
-    const tarifa = await this.prisma.tarifa.findUnique({
-      where: { id: primaryTarifaId },
+    const tarifasDB = await this.prisma.tarifa.findMany({
+      where: { id: { in: tarifaIds } },
     });
 
-    if (!tarifa) {
-      throw new NotFoundException('Tarifa no encontrada');
+    if (tarifasDB.length === 0) {
+      throw new NotFoundException('Tarifas no encontradas');
     }
+
+    let montoPaciente = 0;
+    let montoMedico = 0;
+    let montoTecnico = 0;
+
+    const itemsToCreate = ticketItemsInput.map((itemInput) => {
+      const tarifa = tarifasDB.find((t) => t.id === itemInput.tarifaId);
+      if (!tarifa)
+        throw new NotFoundException(
+          `Tarifa ID ${itemInput.tarifaId} no encontrada`,
+        );
+
+      const cantidad = itemInput.cantidad || 1;
+      const precioUnitario = Number(tarifa.precioTotal);
+      const comisionMed = Number(tarifa.comisionMedico);
+      const comisionTec = tarifa.requiereTecnico
+        ? Number(tarifa.comisionTecnico)
+        : 0;
+      const comisionCli = Number(tarifa.comisionClinica);
+
+      montoPaciente += precioUnitario * cantidad;
+      montoMedico += comisionMed * cantidad;
+      montoTecnico += comisionTec * cantidad;
+
+      return {
+        tarifaId: tarifa.id,
+        descripcion: itemInput.descripcion || tarifa.descripcion,
+        cantidad,
+        precioUnitario,
+        comisionMedico: comisionMed,
+        comisionTecnico: comisionTec,
+        comisionClinica: comisionCli,
+      };
+    });
+
+    const montoSolicitante = Number(createTicketDto.montoSolicitante || 0);
+    const ajusteSolicitante = Math.min(
+      Math.max(0, montoSolicitante),
+      Math.round(montoPaciente * 0.19),
+    );
+
+    const montoClinica = Math.max(
+      0,
+      montoPaciente - montoMedico - montoTecnico - ajusteSolicitante,
+    );
 
     const lastTicket = await this.prisma.ticket.findFirst({
       where: { cajaDiariaId: caja.id },
@@ -83,15 +98,12 @@ export class TicketsService {
       : 1;
     const numeroTicket = `${caja.fecha.toISOString().split('T')[0]}-${String(nextTicketNumber).padStart(4, '0')}`;
 
-    const totals = this.calculateTicketTotals(ticketItems, createTicketDto.montoSolicitante ?? 0);
-    const montoPaciente = totals.montoPaciente || Number(tarifa.precioTotal || 0);
-    const montoMedico = totals.montoMedico || Number(tarifa.comisionMedico || 0);
-    const montoClinica = totals.montoClinica || Number(tarifa.comisionClinica || 0);
-    const montoTecnico = totals.montoTecnico || (tarifa.requiereTecnico ? Number(tarifa.comisionTecnico || 0) : 0);
-
-    let usuarioCreadorId = (createTicketDto as any).usuarioCreadorId as number | undefined;
+    let usuarioCreadorId = (createTicketDto as any).usuarioCreadorId as
+      number | undefined;
     if (!usuarioCreadorId) {
-      const admin = await this.prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+      const admin = await this.prisma.usuario.findFirst({
+        orderBy: { id: 'asc' },
+      });
       usuarioCreadorId = admin?.id || 1;
     }
 
@@ -101,8 +113,10 @@ export class TicketsService {
         pacienteId: createTicketDto.pacienteId,
         medicoId: createTicketDto.medicoId,
         medicoSolicitanteId: createTicketDto.medicoSolicitanteId,
-        tarifaId: primaryTarifaId,
-        descripcionAdicional: createTicketDto.descripcionAdicional || ticketItems.map((item) => item.descripcion || 'Servicio').join(', '),
+        tarifaId: itemsToCreate[0].tarifaId, // Guardar también el ID primario para compatibilidad backward
+        descripcionAdicional:
+          createTicketDto.descripcionAdicional ||
+          itemsToCreate.map((i) => i.descripcion).join(', '),
         metodoPago: createTicketDto.metodoPago,
         montoPaciente,
         montoMedico,
@@ -114,6 +128,9 @@ export class TicketsService {
         solicitanteHistoriaClinica: createTicketDto.solicitanteHistoriaClinica,
         cajaDiariaId: caja.id,
         usuarioCreadorId,
+        items: {
+          create: itemsToCreate,
+        },
       },
       include: {
         paciente: { include: { procedencia: true } },
@@ -121,6 +138,7 @@ export class TicketsService {
         medicoSolicitante: true,
         tarifa: true,
         cajaDiaria: true,
+        items: { include: { tarifa: true } },
       },
     });
 
@@ -147,6 +165,7 @@ export class TicketsService {
         medicoSolicitante: true,
         tarifa: true,
         cajaDiaria: true,
+        items: { include: { tarifa: true } },
       },
       orderBy: { creadoEn: 'desc' },
     });
@@ -161,14 +180,16 @@ export class TicketsService {
         medicoSolicitante: true,
         tarifa: true,
         cajaDiaria: true,
+        items: { include: { tarifa: true } },
       },
     });
   }
 
   update(id: number, updateTicketDto: UpdateTicketDto) {
+    const { items, ...dataToUpdate } = updateTicketDto;
     return this.prisma.ticket.update({
       where: { id },
-      data: updateTicketDto,
+      data: dataToUpdate as any,
     });
   }
 

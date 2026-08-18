@@ -63,11 +63,16 @@ export class ImportadorService {
     dbMedicos.forEach((m) => medicosMap.set(m.nombre.toUpperCase(), m));
 
     const procedenciasMap = new Map<string, any>();
-    dbProcedencias.forEach((p) => procedenciasMap.set(p.nombre.toUpperCase(), p));
+    dbProcedencias.forEach((p) =>
+      procedenciasMap.set(p.nombre.toUpperCase(), p),
+    );
 
     const tarifasMap = new Map<string, any>();
     dbTarifas.forEach((t) =>
-      tarifasMap.set(`${t.categoria.toUpperCase()}|${t.especialidad.toUpperCase()}`, t),
+      tarifasMap.set(
+        `${t.categoria.toUpperCase()}|${t.especialidad.toUpperCase()}`,
+        t,
+      ),
     );
 
     // Listas temporales de elementos nuevos detectados
@@ -90,7 +95,12 @@ export class ImportadorService {
         if (!row || row.length === 0) continue;
         const ticketNum = row[1];
         const pacienteName = row[3];
-        if (!ticketNum || !pacienteName || String(pacienteName).toUpperCase() === 'TOTAL') continue;
+        if (
+          !ticketNum ||
+          !pacienteName ||
+          String(pacienteName).toUpperCase() === 'TOTAL'
+        )
+          continue;
 
         const fechaRaw = row[0];
         const fecha = this.parseDate(fechaRaw);
@@ -172,14 +182,21 @@ export class ImportadorService {
         if (!row || row.length === 0) continue;
         const ticketNum = row[1];
         const pacienteName = row[3];
-        if (!ticketNum || !pacienteName || String(pacienteName).toUpperCase() === 'TOTAL') continue;
+        if (
+          !ticketNum ||
+          !pacienteName ||
+          String(pacienteName).toUpperCase() === 'TOTAL'
+        )
+          continue;
 
         const fechaRaw = row[0];
         const fecha = this.parseDate(fechaRaw);
         const boleta = row[2] ? String(row[2]).trim() : null;
         const grado = row[4] ? String(row[4]).trim() : 'Doctor';
         const medicoName = cleanDoctorName(String(row[5] || ''));
-        const especialidad = standardizeSpecialty(row[6] ? String(row[6]) : 'Ginecología');
+        const especialidad = standardizeSpecialty(
+          row[6] ? String(row[6]) : 'Ginecología',
+        );
         const tipoEco = row[7] ? String(row[7]).trim() : 'Ecografía';
         const celular = row[8] ? String(row[8]).trim() : null;
         const procedencia = row[9] ? String(row[9]).trim() : 'Ciudad de Dios';
@@ -252,7 +269,12 @@ export class ImportadorService {
         if (!row || row.length === 0) continue;
         const ticketNum = row[1];
         const pacienteName = row[3];
-        if (!ticketNum || !pacienteName || String(pacienteName).toUpperCase() === 'TOTAL') continue;
+        if (
+          !ticketNum ||
+          !pacienteName ||
+          String(pacienteName).toUpperCase() === 'TOTAL'
+        )
+          continue;
 
         const fechaRaw = row[0];
         const fecha = this.parseDate(fechaRaw);
@@ -288,7 +310,10 @@ export class ImportadorService {
           continue;
         }
 
-        if (doctorSolicitante && !medicosMap.has(doctorSolicitante.toUpperCase())) {
+        if (
+          doctorSolicitante &&
+          !medicosMap.has(doctorSolicitante.toUpperCase())
+        ) {
           nuevosMedicos.add(doctorSolicitante);
         }
 
@@ -328,12 +353,19 @@ export class ImportadorService {
         if (!row || row.length === 0) continue;
         const ticketNum = row[2];
         const pacienteName = row[6];
-        if (!ticketNum || !pacienteName || String(pacienteName).toUpperCase() === 'TOTAL') continue;
+        if (
+          !ticketNum ||
+          !pacienteName ||
+          String(pacienteName).toUpperCase() === 'TOTAL'
+        )
+          continue;
 
         const fechaRaw = row[1];
         const fecha = this.parseDate(fechaRaw);
         const boleta = row[3] ? String(row[3]).trim() : null;
-        const certificadoFormulario = row[4] ? String(row[4]).trim() : 'Certificado Médico';
+        const certificadoFormulario = row[4]
+          ? String(row[4]).trim()
+          : 'Certificado Médico';
         const certificadoNumero = row[5] ? String(row[5]).trim() : '';
         const total = Number(row[8] || 0);
 
@@ -396,14 +428,21 @@ export class ImportadorService {
         if (!row || row.length === 0) continue;
         const ticketNum = row[1];
         const pacienteName = row[3];
-        if (!ticketNum || !pacienteName || String(pacienteName).toUpperCase() === 'TOTAL') continue;
+        if (
+          !ticketNum ||
+          !pacienteName ||
+          String(pacienteName).toUpperCase() === 'TOTAL'
+        )
+          continue;
 
         const fechaRaw = row[0];
         const fecha = this.parseDate(fechaRaw);
         const boleta = row[2] ? String(row[2]).trim() : null;
         const grado = row[4] ? String(row[4]).trim() : 'Doctor';
         const medicoName = this.cleanDoctorName(String(row[5] || ''));
-        const especialidad = this.standardizeSpecialty(row[6] ? String(row[6]) : 'Cirugía');
+        const especialidad = this.standardizeSpecialty(
+          row[6] ? String(row[6]) : 'Cirugía',
+        );
         const tipoCirugia = row[7] ? String(row[7]).trim() : '';
         const hc = row[8] ? String(row[8]).trim() : null;
         const obs = row[9] ? String(row[9]).trim() : '';
@@ -475,13 +514,20 @@ export class ImportadorService {
         if (!row || row.length === 0) continue;
         const ticketNum = row[1];
         const personaSolicita = row[2];
-        if (!ticketNum || !personaSolicita || String(personaSolicita).toUpperCase() === 'TOTAL') continue;
+        if (
+          !ticketNum ||
+          !personaSolicita ||
+          String(personaSolicita).toUpperCase() === 'TOTAL'
+        )
+          continue;
 
         const fechaRaw = row[0];
         const fecha = this.parseDate(fechaRaw);
         const pacienteName = row[3] ? String(row[3]).trim() : 'Paciente';
         const medicoName = this.cleanDoctorName(String(row[4] || ''));
-        const especialidad = this.standardizeSpecialty(row[5] ? String(row[5]) : 'Medicina General');
+        const especialidad = this.standardizeSpecialty(
+          row[5] ? String(row[5]) : 'Medicina General',
+        );
         const desc = row[7] ? String(row[7]).trim() : 'Historia Clínica';
         const total = Number(row[8] || 0);
 
@@ -655,7 +701,10 @@ export class ImportadorService {
       0,
     );
     const totalTickets = ticketsAImportar.length;
-    const totalEgresosVal = egresosAImportar.reduce((sum, e) => sum + e.monto, 0);
+    const totalEgresosVal = egresosAImportar.reduce(
+      (sum, e) => sum + e.monto,
+      0,
+    );
 
     const summary = {
       mesIdentificado,
@@ -676,310 +725,349 @@ export class ImportadorService {
     }
 
     // --- MODO INSERCIÓN REAL: TRANSACCIÓN DE BASE DE DATOS ---
-    await this.prisma.$transaction(async (tx) => {
-      // Lookup seeded admin user to use as fallback for importer-created records
-      const adminUser = await tx.usuario.findUnique({ where: { usuario: 'admin' } });
-      // Cargar todos los pacientes en memoria
-      const dbPacientes = await tx.paciente.findMany();
-      const pacientesMap = new Map<string, any>();
-      dbPacientes.forEach((p) => pacientesMap.set(p.nombre.toUpperCase(), p));
+    await this.prisma.$transaction(
+      async (tx) => {
+        // Lookup seeded admin user to use as fallback for importer-created records
+        const adminUser = await tx.usuario.findUnique({
+          where: { usuario: 'admin' },
+        });
+        // Cargar todos los pacientes en memoria
+        const dbPacientes = await tx.paciente.findMany();
+        const pacientesMap = new Map<string, any>();
+        dbPacientes.forEach((p) => pacientesMap.set(p.nombre.toUpperCase(), p));
 
-      // Cargar todos los tickets existentes para evitar duplicaciones y hacer inserts directos
-      const dbTicketNums = await tx.ticket.findMany({ select: { numeroTicket: true } });
-      const existingTicketNums = new Set(dbTicketNums.map((t) => t.numeroTicket));
+        // Cargar todos los tickets existentes para evitar duplicaciones y hacer inserts directos
+        const dbTicketNums = await tx.ticket.findMany({
+          select: { numeroTicket: true },
+        });
+        const existingTicketNums = new Set(
+          dbTicketNums.map((t) => t.numeroTicket),
+        );
 
-      // Cargar egresos existentes en memoria: clave = fecha+monto+observaciones
-      const dbEgresos = await tx.egreso.findMany({ select: { fecha: true, monto: true, observaciones: true, cajaDiariaId: true } });
-      const existingEgresoKeys = new Set(
-        dbEgresos.map((e) => `${e.fecha.toISOString().substring(0, 10)}|${Number(e.monto).toFixed(2)}|${(e.observaciones || '').trim().toUpperCase()}`)
-      );
-
-      // Cargar dietas existentes en memoria: clave = cajaDiariaId
-      const dbDietas = await tx.dieta.findMany({ select: { cajaDiariaId: true } });
-      const existingDietaCajaIds = new Set(dbDietas.map((d) => d.cajaDiariaId));
-
-      // 1. Crear procedencias nuevas
-      for (const proc of nuevasProcedencias) {
-        let existing = await tx.procedencia.findUnique({ where: { nombre: proc } });
-        if (!existing) {
-          const p = await tx.procedencia.create({
-            data: { nombre: proc },
-          });
-          procedenciasMap.set(proc.toUpperCase(), p);
-        }
-      }
-
-      // 2. Crear médicos nuevos
-      for (const med of nuevosMedicos) {
-        let existing = await tx.medico.findUnique({ where: { nombre: med } });
-        if (!existing) {
-          const m = await tx.medico.create({
-            data: {
-              nombre: med,
-              especialidad: 'Medicina General',
-              grado: 'Doctor',
-            },
-          });
-          medicosMap.set(med.toUpperCase(), m);
-        }
-      }
-
-      // 3. Registrar al médico de Rayos X default
-      let radMedico = await tx.medico.findUnique({ where: { nombre: 'Dr. Carlos Ramírez' } });
-      if (!radMedico) {
-        radMedico = await tx.medico.create({
-          data: {
-            nombre: 'Dr. Carlos Ramírez',
-            especialidad: 'Radiología',
-            grado: 'Doctor',
+        // Cargar egresos existentes en memoria: clave = fecha+monto+observaciones
+        const dbEgresos = await tx.egreso.findMany({
+          select: {
+            fecha: true,
+            monto: true,
+            observaciones: true,
+            cajaDiariaId: true,
           },
         });
-      }
-      medicosMap.set('DR. CARLOS RAMÍREZ', radMedico);
-      medicosMap.set('CARLOS RAMÍREZ', radMedico);
+        const existingEgresoKeys = new Set(
+          dbEgresos.map(
+            (e) =>
+              `${e.fecha.toISOString().substring(0, 10)}|${Number(e.monto).toFixed(2)}|${(e.observaciones || '').trim().toUpperCase()}`,
+          ),
+        );
 
-      // 4. Crear tarifas nuevas detectadas
-      for (const tfKey of nuevasTarifas) {
-        const [cat, esp] = tfKey.split('|');
-        const existing = await tx.tarifa.findFirst({
-          where: {
-            categoria: cat,
-            especialidad: esp,
-          },
+        // Cargar dietas existentes en memoria: clave = cajaDiariaId
+        const dbDietas = await tx.dieta.findMany({
+          select: { cajaDiariaId: true },
         });
-        if (!existing) {
-          const t = await tx.tarifa.create({
-            data: {
-              categoria: cat,
-              especialidad: esp,
-              descripcion: `${cat} de ${esp}`,
-              precioTotal: 100,
-              tipoReparto: 'PORCENTAJE',
-              comisionMedico: 50,
-              comisionClinica: 50,
-            },
-          });
-          tarifasMap.set(tfKey, t);
-        }
-      }
+        const existingDietaCajaIds = new Set(
+          dbDietas.map((d) => d.cajaDiariaId),
+        );
 
-      // 5. Crear cajas diarias cerradas para cada fecha del Excel
-      const cajasMap = new Map<string, any>();
-      for (const dateStr of uniqueDates) {
-        const dateObj = new Date(dateStr);
-        let existingCaja = await tx.cajaDiaria.findFirst({
-          where: {
-            fecha: dateObj,
-          },
-        });
-        if (!existingCaja) {
-            existingCaja = await tx.cajaDiaria.create({
-            data: {
-              fecha: dateObj,
-              montoApertura: 0,
-              montoEfectivoEsperado: 0,
-              montoDigitalEsperado: 0,
-              abierta: false,
-              fechaApertura: dateObj,
-              fechaCierre: dateObj,
-              usuarioAperturaId: adminUser?.id,
-              usuarioCierreId: adminUser?.id,
-            },
+        // 1. Crear procedencias nuevas
+        for (const proc of nuevasProcedencias) {
+          const existing = await tx.procedencia.findUnique({
+            where: { nombre: proc },
           });
-        }
-        cajasMap.set(dateStr, existingCaja);
-      }
-
-      // 6. Insertar tickets
-      for (const tk of ticketsAImportar) {
-        const dateStr = tk.fecha.substring(0, 10);
-        const caja = cajasMap.get(dateStr);
-
-        // Crear procedencia si no existe
-        const procKey = tk.procedenciaNombre.toUpperCase();
-        let proc = procedenciasMap.get(procKey);
-        if (!proc) {
-          proc = await tx.procedencia.create({
-            data: { nombre: tk.procedenciaNombre },
-          });
-          procedenciasMap.set(procKey, proc);
+          if (!existing) {
+            const p = await tx.procedencia.create({
+              data: { nombre: proc },
+            });
+            procedenciasMap.set(proc.toUpperCase(), p);
+          }
         }
 
-        // Crear/Buscar Paciente en mapa
-        const pacKey = tk.pacienteNombre.toUpperCase();
-        let paciente = pacientesMap.get(pacKey);
-        if (!paciente) {
-          paciente = await tx.paciente.create({
-            data: {
-              nombre: tk.pacienteNombre,
-              celular: tk.celular,
-              procedenciaId: proc.id,
-              numeroHistoriaClinica: tk.historiaClinica || null,
-            },
+        // 2. Crear médicos nuevos
+        for (const med of nuevosMedicos) {
+          const existing = await tx.medico.findUnique({
+            where: { nombre: med },
           });
-          pacientesMap.set(pacKey, paciente);
-        }
-
-        // Médico
-        const medKey = tk.medicoNombre.toUpperCase();
-        let medico = medicosMap.get(medKey);
-        if (!medico) {
-          medico = await tx.medico.create({
-            data: {
-              nombre: tk.medicoNombre,
-              especialidad: tk.especialidad,
-              grado: tk.grado,
-            },
-          });
-          medicosMap.set(medKey, medico);
-        }
-
-        // Doctor solicitante (para Rayos X)
-        let medicoSolicitanteId: number | null = null;
-        if (tk.doctorSolicitanteNombre) {
-          const reqKey = tk.doctorSolicitanteNombre.toUpperCase();
-          let reqMed = medicosMap.get(reqKey);
-          if (!reqMed) {
-            reqMed = await tx.medico.create({
+          if (!existing) {
+            const m = await tx.medico.create({
               data: {
-                nombre: tk.doctorSolicitanteNombre,
-                especialidad: 'Radiología',
+                nombre: med,
+                especialidad: 'Medicina General',
                 grado: 'Doctor',
               },
             });
-            medicosMap.set(reqKey, reqMed);
+            medicosMap.set(med.toUpperCase(), m);
           }
-          medicoSolicitanteId = reqMed.id;
         }
 
-        // Tarifa
-        let cat = 'Consulta';
-        const espUpper = tk.especialidad.toUpperCase();
-        if (espUpper.includes('ECOGRAF')) cat = 'Ecografía';
-        else if (espUpper.includes('RADIOL') || espUpper.includes('RAYOS')) cat = 'Rayos X';
-        else if (espUpper.includes('CERTIF')) cat = 'Certificado';
-        else if (espUpper.includes('HISTOR')) cat = 'Historia Clínica';
-        else if (espUpper.includes('SOP') || espUpper.includes('CIRUG')) cat = 'SOP';
-
-        cat = standardizeCategory(cat);
-        const stdEsp = standardizeSpecialty(tk.especialidad);
-
-        const tfKey = `${cat.toUpperCase()}|${stdEsp.toUpperCase()}`;
-        let tarifa = tarifasMap.get(tfKey);
-        if (!tarifa) {
-          tarifa = await tx.tarifa.create({
-            data: {
-              categoria: cat,
-              especialidad: stdEsp,
-              descripcion: `${cat} de ${stdEsp}`,
-              precioTotal: tk.montoPaciente,
-              tipoReparto: 'PORCENTAJE',
-              comisionMedico: tk.montoMedico,
-              comisionClinica: tk.montoClinica,
-            },
-          });
-          tarifasMap.set(tfKey, tarifa);
-        }
-
-        // Crear ticket directo (si no existe ya)
-        if (!existingTicketNums.has(tk.numeroTicket)) {
-              await tx.ticket.create({
-            data: {
-              numeroTicket: tk.numeroTicket,
-              numeroBoleta: tk.numeroBoleta,
-              fecha: new Date(tk.fecha),
-              pacienteId: paciente.id,
-              medicoId: medico.id,
-              medicoSolicitanteId,
-              tarifaId: tarifa.id,
-              descripcionAdicional: tk.descripcionAdicional,
-              metodoPago: 'EFECTIVO',
-              montoPaciente: tk.montoPaciente,
-              montoMedico: tk.montoMedico,
-              montoClinica: tk.montoClinica,
-              montoTecnico: tk.montoTecnico,
-              nombreTecnico: tk.nombreTecnico,
-              estado: tk.estado,
-              cajaDiariaId: caja.id,
-              usuarioCreadorId: adminUser?.id,
-              solicitanteHistoriaClinica: tk.solicitanteHistoriaClinica || null,
-              certificadoFormulario: tk.certificadoFormulario || null,
-              certificadoNumero: tk.certificadoNumero || null,
-            },
-          });
-          existingTicketNums.add(tk.numeroTicket);
-        }
-      }
-
-      // 7. Insertar egresos (con deduplicación por fecha+monto+observaciones)
-      for (const eg of egresosAImportar) {
-        const dateStr = eg.fecha.substring(0, 10);
-        const caja = cajasMap.get(dateStr);
-        const egresoKey = `${dateStr}|${Number(eg.monto).toFixed(2)}|${(eg.observaciones || '').trim().toUpperCase()}`;
-
-        if (!existingEgresoKeys.has(egresoKey)) {
-          await tx.egreso.create({
-            data: {
-              fecha: new Date(eg.fecha),
-              tipoEgreso: eg.tipoEgreso,
-              numeroComprobante: eg.numeroComprobante,
-              proveedor: eg.proveedor,
-              ruc: eg.ruc,
-              observaciones: eg.observaciones,
-              monto: eg.monto,
-              cajaDiariaId: caja.id,
-              usuarioEgresoId: adminUser?.id,
-            },
-          });
-          existingEgresoKeys.add(egresoKey);
-        }
-      }
-
-      // 8. Insertar dietas (con deduplicación por cajaDiariaId)
-      for (const dt of dietasAImportar) {
-        const dateStr = dt.fecha.substring(0, 10);
-        const caja = cajasMap.get(dateStr);
-
-        if (!existingDietaCajaIds.has(caja.id)) {
-          await tx.dieta.create({
-            data: {
-              fecha: new Date(dt.fecha),
-              desayunoCant: dt.desayunoCant,
-              almuerzoCant: dt.almuerzoCant,
-              cenaCant: dt.cenaCant,
-              observaciones: dt.observaciones,
-              monto: dt.monto,
-              cajaDiariaId: caja.id,
-            },
-          });
-          existingDietaCajaIds.add(caja.id);
-        }
-      }
-
-      // 9. Actualizar saldos finales esperados de cada caja creada
-      for (const [dateStr, caja] of cajasMap.entries()) {
-        const ticketsDeCaja = ticketsAImportar.filter(
-          (t) => t.fecha.substring(0, 10) === dateStr && t.estado === 'ACTIVO',
-        );
-        const egresosDeCaja = egresosAImportar.filter(
-          (e) => e.fecha.substring(0, 10) === dateStr,
-        );
-
-        const totalIngresos = ticketsDeCaja.reduce((sum, t) => sum + t.montoPaciente, 0);
-        const totalEgresos = egresosDeCaja.reduce((sum, e) => sum + e.monto, 0);
-        const efectivoEsperado = totalIngresos - totalEgresos;
-
-        await tx.cajaDiaria.update({
-          where: { id: caja.id },
-          data: {
-            montoEfectivoEsperado: efectivoEsperado,
-            montoEfectivoReal: efectivoEsperado,
-          },
+        // 3. Registrar al médico de Rayos X default
+        let radMedico = await tx.medico.findUnique({
+          where: { nombre: 'Dr. Carlos Ramírez' },
         });
-      }
-    }, {
-      timeout: 60000
-    });
+        if (!radMedico) {
+          radMedico = await tx.medico.create({
+            data: {
+              nombre: 'Dr. Carlos Ramírez',
+              especialidad: 'Radiología',
+              grado: 'Doctor',
+            },
+          });
+        }
+        medicosMap.set('DR. CARLOS RAMÍREZ', radMedico);
+        medicosMap.set('CARLOS RAMÍREZ', radMedico);
+
+        // 4. Crear tarifas nuevas detectadas
+        for (const tfKey of nuevasTarifas) {
+          const [cat, esp] = tfKey.split('|');
+          const existing = await tx.tarifa.findFirst({
+            where: {
+              categoria: cat,
+              especialidad: esp,
+            },
+          });
+          if (!existing) {
+            const t = await tx.tarifa.create({
+              data: {
+                categoria: cat,
+                especialidad: esp,
+                descripcion: `${cat} de ${esp}`,
+                precioTotal: 100,
+                tipoReparto: 'PORCENTAJE',
+                comisionMedico: 50,
+                comisionClinica: 50,
+              },
+            });
+            tarifasMap.set(tfKey, t);
+          }
+        }
+
+        // 5. Crear cajas diarias cerradas para cada fecha del Excel
+        const cajasMap = new Map<string, any>();
+        for (const dateStr of uniqueDates) {
+          const dateObj = new Date(dateStr);
+          let existingCaja = await tx.cajaDiaria.findFirst({
+            where: {
+              fecha: dateObj,
+            },
+          });
+          if (!existingCaja) {
+            existingCaja = await tx.cajaDiaria.create({
+              data: {
+                fecha: dateObj,
+                montoApertura: 0,
+                montoEfectivoEsperado: 0,
+                montoDigitalEsperado: 0,
+                abierta: false,
+                fechaApertura: dateObj,
+                fechaCierre: dateObj,
+                usuarioAperturaId: adminUser?.id,
+                usuarioCierreId: adminUser?.id,
+              },
+            });
+          }
+          cajasMap.set(dateStr, existingCaja);
+        }
+
+        // 6. Insertar tickets
+        for (const tk of ticketsAImportar) {
+          const dateStr = tk.fecha.substring(0, 10);
+          const caja = cajasMap.get(dateStr);
+
+          // Crear procedencia si no existe
+          const procKey = tk.procedenciaNombre.toUpperCase();
+          let proc = procedenciasMap.get(procKey);
+          if (!proc) {
+            proc = await tx.procedencia.create({
+              data: { nombre: tk.procedenciaNombre },
+            });
+            procedenciasMap.set(procKey, proc);
+          }
+
+          // Crear/Buscar Paciente en mapa
+          const pacKey = tk.pacienteNombre.toUpperCase();
+          let paciente = pacientesMap.get(pacKey);
+          if (!paciente) {
+            paciente = await tx.paciente.create({
+              data: {
+                nombre: tk.pacienteNombre,
+                celular: tk.celular,
+                procedenciaId: proc.id,
+                numeroHistoriaClinica: tk.historiaClinica || null,
+              },
+            });
+            pacientesMap.set(pacKey, paciente);
+          }
+
+          // Médico
+          const medKey = tk.medicoNombre.toUpperCase();
+          let medico = medicosMap.get(medKey);
+          if (!medico) {
+            medico = await tx.medico.create({
+              data: {
+                nombre: tk.medicoNombre,
+                especialidad: tk.especialidad,
+                grado: tk.grado,
+              },
+            });
+            medicosMap.set(medKey, medico);
+          }
+
+          // Doctor solicitante (para Rayos X)
+          let medicoSolicitanteId: number | null = null;
+          if (tk.doctorSolicitanteNombre) {
+            const reqKey = tk.doctorSolicitanteNombre.toUpperCase();
+            let reqMed = medicosMap.get(reqKey);
+            if (!reqMed) {
+              reqMed = await tx.medico.create({
+                data: {
+                  nombre: tk.doctorSolicitanteNombre,
+                  especialidad: 'Radiología',
+                  grado: 'Doctor',
+                },
+              });
+              medicosMap.set(reqKey, reqMed);
+            }
+            medicoSolicitanteId = reqMed.id;
+          }
+
+          // Tarifa
+          let cat = 'Consulta';
+          const espUpper = tk.especialidad.toUpperCase();
+          if (espUpper.includes('ECOGRAF')) cat = 'Ecografía';
+          else if (espUpper.includes('RADIOL') || espUpper.includes('RAYOS'))
+            cat = 'Rayos X';
+          else if (espUpper.includes('CERTIF')) cat = 'Certificado';
+          else if (espUpper.includes('HISTOR')) cat = 'Historia Clínica';
+          else if (espUpper.includes('SOP') || espUpper.includes('CIRUG'))
+            cat = 'SOP';
+
+          cat = standardizeCategory(cat);
+          const stdEsp = standardizeSpecialty(tk.especialidad);
+
+          const tfKey = `${cat.toUpperCase()}|${stdEsp.toUpperCase()}`;
+          let tarifa = tarifasMap.get(tfKey);
+          if (!tarifa) {
+            tarifa = await tx.tarifa.create({
+              data: {
+                categoria: cat,
+                especialidad: stdEsp,
+                descripcion: `${cat} de ${stdEsp}`,
+                precioTotal: tk.montoPaciente,
+                tipoReparto: 'PORCENTAJE',
+                comisionMedico: tk.montoMedico,
+                comisionClinica: tk.montoClinica,
+              },
+            });
+            tarifasMap.set(tfKey, tarifa);
+          }
+
+          // Crear ticket directo (si no existe ya)
+          if (!existingTicketNums.has(tk.numeroTicket)) {
+            await tx.ticket.create({
+              data: {
+                numeroTicket: tk.numeroTicket,
+                numeroBoleta: tk.numeroBoleta,
+                fecha: new Date(tk.fecha),
+                pacienteId: paciente.id,
+                medicoId: medico.id,
+                medicoSolicitanteId,
+                tarifaId: tarifa.id,
+                descripcionAdicional: tk.descripcionAdicional,
+                metodoPago: 'EFECTIVO',
+                montoPaciente: tk.montoPaciente,
+                montoMedico: tk.montoMedico,
+                montoClinica: tk.montoClinica,
+                montoTecnico: tk.montoTecnico,
+                nombreTecnico: tk.nombreTecnico,
+                estado: tk.estado,
+                cajaDiariaId: caja.id,
+                usuarioCreadorId: adminUser?.id,
+                solicitanteHistoriaClinica:
+                  tk.solicitanteHistoriaClinica || null,
+                certificadoFormulario: tk.certificadoFormulario || null,
+                certificadoNumero: tk.certificadoNumero || null,
+              },
+            });
+            existingTicketNums.add(tk.numeroTicket);
+          }
+        }
+
+        // 7. Insertar egresos (con deduplicación por fecha+monto+observaciones)
+        for (const eg of egresosAImportar) {
+          const dateStr = eg.fecha.substring(0, 10);
+          const caja = cajasMap.get(dateStr);
+          const egresoKey = `${dateStr}|${Number(eg.monto).toFixed(2)}|${(eg.observaciones || '').trim().toUpperCase()}`;
+
+          if (!existingEgresoKeys.has(egresoKey)) {
+            await tx.egreso.create({
+              data: {
+                fecha: new Date(eg.fecha),
+                tipoEgreso: eg.tipoEgreso,
+                numeroComprobante: eg.numeroComprobante,
+                proveedor: eg.proveedor,
+                ruc: eg.ruc,
+                observaciones: eg.observaciones,
+                monto: eg.monto,
+                cajaDiariaId: caja.id,
+                usuarioEgresoId: adminUser?.id,
+              },
+            });
+            existingEgresoKeys.add(egresoKey);
+          }
+        }
+
+        // 8. Insertar dietas (con deduplicación por cajaDiariaId)
+        for (const dt of dietasAImportar) {
+          const dateStr = dt.fecha.substring(0, 10);
+          const caja = cajasMap.get(dateStr);
+
+          if (!existingDietaCajaIds.has(caja.id)) {
+            await tx.dieta.create({
+              data: {
+                fecha: new Date(dt.fecha),
+                desayunoCant: dt.desayunoCant,
+                almuerzoCant: dt.almuerzoCant,
+                cenaCant: dt.cenaCant,
+                observaciones: dt.observaciones,
+                monto: dt.monto,
+                cajaDiariaId: caja.id,
+              },
+            });
+            existingDietaCajaIds.add(caja.id);
+          }
+        }
+
+        // 9. Actualizar saldos finales esperados de cada caja creada
+        for (const [dateStr, caja] of cajasMap.entries()) {
+          const ticketsDeCaja = ticketsAImportar.filter(
+            (t) =>
+              t.fecha.substring(0, 10) === dateStr && t.estado === 'ACTIVO',
+          );
+          const egresosDeCaja = egresosAImportar.filter(
+            (e) => e.fecha.substring(0, 10) === dateStr,
+          );
+
+          const totalIngresos = ticketsDeCaja.reduce(
+            (sum, t) => sum + t.montoPaciente,
+            0,
+          );
+          const totalEgresos = egresosDeCaja.reduce(
+            (sum, e) => sum + e.monto,
+            0,
+          );
+          const efectivoEsperado = totalIngresos - totalEgresos;
+
+          await tx.cajaDiaria.update({
+            where: { id: caja.id },
+            data: {
+              montoEfectivoEsperado: efectivoEsperado,
+              montoEfectivoReal: efectivoEsperado,
+            },
+          });
+        }
+      },
+      {
+        timeout: 60000,
+      },
+    );
 
     return { success: true, summary };
   }

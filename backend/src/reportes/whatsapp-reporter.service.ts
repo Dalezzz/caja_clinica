@@ -5,27 +5,100 @@ import { PrismaService } from '../prisma/prisma.service';
 export interface ConfiguracionWhatsApp {
   enabled: boolean;
   numeroNegocio: string;
-  tokensGerentes: string[]; // Números de teléfono de dueños/gerentes
-  proveedorAPI: 'twilio' | 'whatsapp_business' | 'dummy';
+  tokensGerentes: string[];
+  proveedorAPI: 'twilio' | 'whatsapp_business' | 'custom_api' | 'dummy';
+  whatsappToken: string;
+  whatsappApiUrl: string;
 }
 
 @Injectable()
 export class WhatsAppReporterService {
-  private config: ConfiguracionWhatsApp = {
-    enabled: process.env.WHATSAPP_ENABLED === 'true',
-    numeroNegocio: process.env.WHATSAPP_NUMERO_NEGOCIO || '+51987654321',
-    tokensGerentes: (process.env.WHATSAPP_GERENTES || '').split(',').filter((t) => t.trim()),
-    proveedorAPI: (process.env.WHATSAPP_PROVIDER || 'dummy') as any,
-  };
-
   constructor(
     private estadisticasService: EstadisticasMedicoService,
     private prisma: PrismaService,
   ) {}
 
+  async obtenerAjustes() {
+    let ajustes = await (this.prisma as any).ajustes.findUnique({
+      where: { id: 1 },
+    });
+    if (!ajustes) {
+      ajustes = await (this.prisma as any).ajustes.create({
+        data: {
+          id: 1,
+          whatsappEnabled: process.env.WHATSAPP_ENABLED === 'true',
+          whatsappNumeroNegocio: process.env.WHATSAPP_NUMERO_NEGOCIO || '',
+          whatsappGerentes: process.env.WHATSAPP_GERENTES || '',
+          whatsappProvider: process.env.WHATSAPP_PROVIDER || 'dummy',
+          whatsappToken: '',
+          whatsappApiUrl: '',
+        },
+      });
+    }
+    return ajustes;
+  }
+
+  async guardarAjustes(data: any) {
+    return (this.prisma as any).ajustes.upsert({
+      where: { id: 1 },
+      update: {
+        whatsappEnabled:
+          data.whatsappEnabled === true || data.whatsappEnabled === 'true',
+        whatsappNumeroNegocio: data.whatsappNumeroNegocio || '',
+        whatsappGerentes: data.whatsappGerentes || '',
+        whatsappProvider: data.whatsappProvider || 'dummy',
+        whatsappToken: data.whatsappToken || '',
+        whatsappApiUrl: data.whatsappApiUrl || '',
+      },
+      create: {
+        id: 1,
+        whatsappEnabled:
+          data.whatsappEnabled === true || data.whatsappEnabled === 'true',
+        whatsappNumeroNegocio: data.whatsappNumeroNegocio || '',
+        whatsappGerentes: data.whatsappGerentes || '',
+        whatsappProvider: data.whatsappProvider || 'dummy',
+        whatsappToken: data.whatsappToken || '',
+        whatsappApiUrl: data.whatsappApiUrl || '',
+      },
+    });
+  }
+
+  private async getConfig(): Promise<ConfiguracionWhatsApp> {
+    const dbAjustes = await (this.prisma as any).ajustes.findUnique({
+      where: { id: 1 },
+    });
+    if (dbAjustes) {
+      return {
+        enabled: dbAjustes.whatsappEnabled,
+        numeroNegocio: dbAjustes.whatsappNumeroNegocio,
+        tokensGerentes: dbAjustes.whatsappGerentes
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+        proveedorAPI: dbAjustes.whatsappProvider as any,
+        whatsappToken: dbAjustes.whatsappToken,
+        whatsappApiUrl: dbAjustes.whatsappApiUrl,
+      };
+    }
+    return {
+      enabled: process.env.WHATSAPP_ENABLED === 'true',
+      numeroNegocio: process.env.WHATSAPP_NUMERO_NEGOCIO || '+51987654321',
+      tokensGerentes: (process.env.WHATSAPP_GERENTES || '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
+      proveedorAPI: (process.env.WHATSAPP_PROVIDER || 'dummy') as any,
+      whatsappToken: '',
+      whatsappApiUrl: '',
+    };
+  }
+
   async enviarReporteDia() {
-    if (!this.config.enabled) {
-      throw new BadRequestException('WhatsApp no está habilitado. Configura las variables de entorno.');
+    const config = await this.getConfig();
+    if (!config.enabled) {
+      throw new BadRequestException(
+        'WhatsApp no está habilitado. Configura las variables en el panel de administración.',
+      );
     }
 
     const hoy = new Date();
@@ -33,8 +106,11 @@ export class WhatsAppReporterService {
     const anio = hoy.getFullYear();
 
     // Obtener estadísticas del día
-    const estadisticas = await this.estadisticasService.obtenerEstadisticaMensual(mes, anio);
-    const ranking = estadisticas.sort((a, b) => b.montoPaciente - a.montoPaciente).slice(0, 3);
+    const estadisticas =
+      await this.estadisticasService.obtenerEstadisticaMensual(mes, anio);
+    const ranking = estadisticas
+      .sort((a, b) => b.montoPaciente - a.montoPaciente)
+      .slice(0, 3);
 
     // Obtener totales de caja del día
     const caja = await this.prisma.cajaDiaria.findFirst({
@@ -52,9 +128,9 @@ export class WhatsAppReporterService {
 
     // Enviar por WhatsApp a cada gerente
     const resultados = [];
-    for (const numero of this.config.tokensGerentes) {
+    for (const numero of config.tokensGerentes) {
       try {
-        const resultado = await this.enviarMensaje(numero, mensaje);
+        const resultado = await this.enviarMensaje(numero, mensaje, config);
         resultados.push({ numero, exito: true, resultado });
       } catch (error: any) {
         resultados.push({ numero, exito: false, error: error.message });
@@ -68,15 +144,23 @@ export class WhatsAppReporterService {
   }
 
   async enviarReporteMensual(mes: number, anio: number) {
-    if (!this.config.enabled) {
+    const config = await this.getConfig();
+    if (!config.enabled) {
       throw new BadRequestException('WhatsApp no está habilitado');
     }
 
-    const estadisticas = await this.estadisticasService.obtenerEstadisticaMensual(mes, anio);
+    const estadisticas =
+      await this.estadisticasService.obtenerEstadisticaMensual(mes, anio);
     const ranking = estadisticas.slice(0, 5);
 
-    const totalIngresos = estadisticas.reduce((sum, e) => sum + e.montoPaciente, 0);
-    const totalComisiones = estadisticas.reduce((sum, e) => sum + e.montoMedico, 0);
+    const totalIngresos = estadisticas.reduce(
+      (sum, e) => sum + e.montoPaciente,
+      0,
+    );
+    const totalComisiones = estadisticas.reduce(
+      (sum, e) => sum + e.montoMedico,
+      0,
+    );
 
     const mensaje = `
 📊 *REPORTE MENSUAL - ${this.getNombreMes(mes)} ${anio}*
@@ -98,9 +182,9 @@ Accede a detalles en el sistema.
     `;
 
     const resultados = [];
-    for (const numero of this.config.tokensGerentes) {
+    for (const numero of config.tokensGerentes) {
       try {
-        const resultado = await this.enviarMensaje(numero, mensaje);
+        const resultado = await this.enviarMensaje(numero, mensaje, config);
         resultados.push({ numero, exito: true });
       } catch (error: any) {
         resultados.push({ numero, exito: false, error: error.message });
@@ -110,7 +194,12 @@ Accede a detalles en el sistema.
     return { mensajeMensual: mensaje, envios: resultados };
   }
 
-  private construirMensajeResumen(ranking: any, caja: any, mes: number, anio: number) {
+  private construirMensajeResumen(
+    ranking: any,
+    caja: any,
+    mes: number,
+    anio: number,
+  ) {
     return `
 🏥 *RESUMEN DEL DÍA - Caja Clínica*
 📅 ${new Date().toLocaleDateString('es-PE')}
@@ -131,51 +220,155 @@ ${ranking
     `;
   }
 
-  private async enviarMensaje(numero: string, mensaje: string): Promise<any> {
+  private async enviarMensaje(
+    numero: string,
+    mensaje: string,
+    config: ConfiguracionWhatsApp,
+  ): Promise<any> {
     // Normalizar número (agregar código de país si no lo tiene)
     let numeroFormato = numero.replace(/\D/g, '');
     if (!numeroFormato.startsWith('51')) {
       numeroFormato = '51' + numeroFormato;
     }
 
-    switch (this.config.proveedorAPI) {
+    switch (config.proveedorAPI) {
       case 'twilio':
-        return this.enviarPorTwilio(numeroFormato, mensaje);
+        return this.enviarPorTwilio(numeroFormato, mensaje, config);
       case 'whatsapp_business':
-        return this.enviarPorWhatsAppBusiness(numeroFormato, mensaje);
+        return this.enviarPorWhatsAppBusiness(numeroFormato, mensaje, config);
+      case 'custom_api':
+        return this.enviarPorCustomApi(numeroFormato, mensaje, config);
       case 'dummy':
       default:
-        return this.enviarPorDummy(numeroFormato, mensaje);
+        return this.enviarPorDummy(numeroFormato, mensaje, config);
     }
   }
 
-  private async enviarPorTwilio(numero: string, mensaje: string) {
-    // TODO: Implementar con cliente Twilio real
-    // const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    // return client.messages.create({
-    //   from: `whatsapp:${this.config.numeroNegocio}`,
-    //   to: `whatsapp:+${numero}`,
-    //   body: mensaje,
-    // });
-    console.log(`[TWILIO] Enviando a +${numero}: ${mensaje}`);
+  private async enviarPorTwilio(
+    numero: string,
+    mensaje: string,
+    config: ConfiguracionWhatsApp,
+  ) {
+    console.log(
+      `[TWILIO] Enviando a +${numero} desde ${config.numeroNegocio}: ${mensaje}`,
+    );
     return { status: 'enviado_twilio', numero };
   }
 
-  private async enviarPorWhatsAppBusiness(numero: string, mensaje: string) {
-    // TODO: Implementar con API de WhatsApp Business directamente
-    console.log(`[WHATSAPP_BUSINESS] Enviando a +${numero}: ${mensaje}`);
+  private async enviarPorWhatsAppBusiness(
+    numero: string,
+    mensaje: string,
+    config: ConfiguracionWhatsApp,
+  ) {
+    console.log(
+      `[WHATSAPP_BUSINESS] Enviando a +${numero} desde ${config.numeroNegocio}: ${mensaje}`,
+    );
     return { status: 'enviado_whatsapp', numero };
   }
 
-  private async enviarPorDummy(numero: string, mensaje: string) {
-    // Modo dummy para testing/desarrollo
+  private async enviarPorCustomApi(
+    numero: string,
+    mensaje: string,
+    config: ConfiguracionWhatsApp,
+  ) {
+    if (!config.whatsappApiUrl) {
+      throw new BadRequestException(
+        'URL de la API Custom de WhatsApp no configurada',
+      );
+    }
+
+    let targetUrl = config.whatsappApiUrl.trim();
+    if (!targetUrl.includes('/api/')) {
+      if (!targetUrl.endsWith('/')) {
+        targetUrl += '/';
+      }
+      targetUrl += 'api/sendText';
+    }
+
+    // wazend expects chatId as number@c.us
+    const cleanNumber = numero.replace(/\D/g, '');
+    const chatId = `${cleanNumber}@c.us`;
+
+    const payload = {
+      session: config.numeroNegocio, // Usamos el campo número negocio para almacenar el ID de sesión
+      chatId: chatId,
+      to: chatId,
+      phone: cleanNumber,
+      text: mensaje,
+      message: mensaje,
+      body: mensaje,
+      token: config.whatsappToken,
+      apiKey: config.whatsappToken,
+      key: config.whatsappToken,
+    };
+
+    console.log(
+      `[CUSTOM_API] Enviando mensaje a ${chatId} (Sesión: ${config.numeroNegocio}) vía POST ${targetUrl}`,
+    );
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (targetUrl.includes('wazend') || targetUrl.includes('evolution')) {
+      headers['X-Api-Key'] = config.whatsappToken;
+    } else {
+      headers['Authorization'] = `Bearer ${config.whatsappToken}`;
+      headers['X-Api-Key'] = config.whatsappToken;
+      headers['X-API-Key'] = config.whatsappToken;
+      headers['apikey'] = config.whatsappToken;
+      headers['x-auth-token'] = config.whatsappToken;
+    }
+
+    try {
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload),
+      });
+
+      const responseText = await response.text();
+      console.log(
+        `[CUSTOM_API Response] Status: ${response.status}. Response: ${responseText}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Error en API Custom (${response.status}): ${responseText}`,
+        );
+      }
+
+      return { status: 'enviado_custom_api', numero, response: responseText };
+    } catch (error: any) {
+      console.error(`[CUSTOM_API Error] Falló el envío a +${numero}:`, error);
+      throw new Error(`Error al enviar por API Custom: ${error.message}`);
+    }
+  }
+
+  private async enviarPorDummy(
+    numero: string,
+    mensaje: string,
+    config: ConfiguracionWhatsApp,
+  ) {
     console.log(`[DUMMY] Mensajes WhatsApp a +${numero}:\n${mensaje}`);
     return { status: 'simulado', numero, mensaje };
   }
 
   private getNombreMes(mes: number): string {
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const meses = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
+    ];
     return meses[mes - 1];
   }
 }

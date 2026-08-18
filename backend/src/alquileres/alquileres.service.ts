@@ -7,10 +7,15 @@ import { Decimal } from '@prisma/client/runtime/library';
 export class AlquileresService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAlquilerDto: CreateAlquilerDto, usuarioCreadorId?: number) {
+  async create(
+    createAlquilerDto: CreateAlquilerDto,
+    usuarioCreadorId?: number,
+  ) {
     let creadorId = usuarioCreadorId;
     if (!creadorId) {
-      const admin = await this.prisma.usuario.findFirst({ orderBy: { id: 'asc' } });
+      const admin = await this.prisma.usuario.findFirst({
+        orderBy: { id: 'asc' },
+      });
       creadorId = admin?.id || 1;
     }
 
@@ -45,7 +50,9 @@ export class AlquileresService {
     // Registrar como ingreso en la caja (si es efectivo)
     await this.prisma.cajaDiaria.update({
       where: { id: caja.id },
-      data: { montoEfectivoEsperado: { increment: createAlquilerDto.precioTotal } },
+      data: {
+        montoEfectivoEsperado: { increment: createAlquilerDto.precioTotal },
+      },
     });
 
     return alquiler;
@@ -136,7 +143,14 @@ export class AlquileresService {
       },
     });
 
-    const totalIngresos = alquileres.reduce((sum, a) => sum + Number(a.precioTotal), 0);
-    return { totalAlquileres: alquileres.length, totalIngresos, detalles: alquileres };
+    const totalIngresos = alquileres.reduce(
+      (sum, a) => sum + Number(a.precioTotal),
+      0,
+    );
+    return {
+      totalAlquileres: alquileres.length,
+      totalIngresos,
+      detalles: alquileres,
+    };
   }
 }

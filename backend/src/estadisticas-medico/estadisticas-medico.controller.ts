@@ -3,20 +3,31 @@ import { EstadisticasMedicoService } from './estadisticas-medico.service';
 
 @Controller('estadisticas-medicos')
 export class EstadisticasMedicoController {
-  constructor(private readonly estadisticasService: EstadisticasMedicoService) {}
+  constructor(
+    private readonly estadisticasService: EstadisticasMedicoService,
+  ) {}
 
   @Get('mensual/:mes/:anio')
-  async obtenerEstadisticaMensual(@Param('mes') mes: string, @Param('anio') anio: string) {
+  async obtenerEstadisticaMensual(
+    @Param('mes') mes: string,
+    @Param('anio') anio: string,
+  ) {
     return this.estadisticasService.obtenerEstadisticaMensual(+mes, +anio);
   }
 
   @Get('ranking/:mes/:anio')
   async obtenerRanking(@Param('mes') mes: string, @Param('anio') anio: string) {
-    return this.estadisticasService.obtenerRankingMedicosMesDetallado(+mes, +anio);
+    return this.estadisticasService.obtenerRankingMedicosMesDetallado(
+      +mes,
+      +anio,
+    );
   }
 
   @Get('anual/:medicoId/:anio')
-  async obtenerComparativaAnual(@Param('medicoId') medicoId: string, @Param('anio') anio: string) {
+  async obtenerComparativaAnual(
+    @Param('medicoId') medicoId: string,
+    @Param('anio') anio: string,
+  ) {
     return this.estadisticasService.obtenerComparativaAnual(+medicoId, +anio);
   }
 
@@ -26,6 +37,10 @@ export class EstadisticasMedicoController {
     @Param('mes') mes: string,
     @Param('anio') anio: string,
   ) {
-    return this.estadisticasService.obtenerCrecimientoMensual(+medicoId, +mes, +anio);
+    return this.estadisticasService.obtenerCrecimientoMensual(
+      +medicoId,
+      +mes,
+      +anio,
+    );
   }
 }

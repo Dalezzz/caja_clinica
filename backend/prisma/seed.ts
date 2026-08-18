@@ -1,5 +1,18 @@
-import { PrismaClient, RolUsuario, MetodoPago, EstadoTicket, TipoEgreso, EstadoAlquiler, EstadoComprobante } from '@prisma/client';
+import { PrismaClient, RolUsuario, MetodoPago, EstadoTicket, TipoEgreso } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+
+const EstadoAlquiler = {
+  ACTIVO: 'ACTIVO',
+  FINALIZADO: 'FINALIZADO',
+  CANCELADO: 'CANCELADO',
+} as any;
+
+const EstadoComprobante = {
+  BORRADOR: 'BORRADOR',
+  FIRMADO: 'FIRMADO',
+  PAGADO: 'PAGADO',
+  ANULADO: 'ANULADO',
+} as any;
 
 const prisma = new PrismaClient();
 
@@ -7,25 +20,27 @@ async function main() {
   console.log('🚀 Iniciando Seed Completo con gran volumen de datos...');
 
   // 1. Usuarios
-  const contrasenaHash = await bcrypt.hash('Medic2026!', 10);
+  const adminHash = await bcrypt.hash('admin1234', 10);
+  const userHash = await bcrypt.hash('user1234', 10);
+
   const adminUser = await prisma.usuario.upsert({
     where: { usuario: 'admin' },
-    update: {},
+    update: { contrasena: adminHash },
     create: {
       nombre: 'Administrador Principal',
       usuario: 'admin',
-      contrasena: contrasenaHash,
+      contrasena: adminHash,
       rol: RolUsuario.ADMINISTRADOR,
     },
   });
 
   const recepcionistaUser = await prisma.usuario.upsert({
-    where: { usuario: 'recepcion' },
-    update: {},
+    where: { usuario: 'user' },
+    update: { contrasena: userHash },
     create: {
-      nombre: 'Cajera Recepción 1',
-      usuario: 'recepcion',
-      contrasena: contrasenaHash,
+      nombre: 'Recepcionista',
+      usuario: 'user',
+      contrasena: userHash,
       rol: RolUsuario.RECEPCIONISTA,
     },
   });
@@ -301,7 +316,7 @@ async function main() {
   const cajaReciente = await prisma.cajaDiaria.findFirst({ orderBy: { fecha: 'desc' } });
 
   for (const alq of alquileresData) {
-    await prisma.alquilerEspacio.create({
+    await (prisma as any).alquilerEspacio.create({
       data: {
         ...alq,
         cajaDiariaId: cajaReciente!.id,
@@ -317,7 +332,7 @@ async function main() {
     const fechaComp = new Date(fechaActual);
     fechaComp.setDate(fechaActual.getDate() - (mIdx * 3 + 1));
 
-    await prisma.comprobantePagoMedico.create({
+    await (prisma as any).comprobantePagoMedico.create({
       data: {
         medicoId: med.id,
         fecha: fechaComp,
@@ -337,6 +352,22 @@ async function main() {
     });
   }
   console.log('✅ Comprobantes de Pago Médico generados');
+
+  // 9. Ajustes de Configuración (WhatsApp, etc.)
+  await (prisma as any).ajustes.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      whatsappEnabled: process.env.WHATSAPP_ENABLED === 'true',
+      whatsappNumeroNegocio: process.env.WHATSAPP_NUMERO_NEGOCIO || '',
+      whatsappGerentes: process.env.WHATSAPP_GERENTES || '',
+      whatsappProvider: process.env.WHATSAPP_PROVIDER || 'dummy',
+      whatsappToken: '',
+      whatsappApiUrl: '',
+    },
+  });
+  console.log('✅ Ajustes de configuración inicializados');
 
   console.log('🎉 SEED COMPLETADO AL 100%! La base de datos está cargada con abundante información real.');
 }

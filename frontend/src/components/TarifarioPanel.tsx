@@ -1,5 +1,5 @@
-import { Layers } from 'lucide-react';
-import type { Tarifa } from '../api';
+import { Layers } from "lucide-react";
+import type { Tarifa } from "../api";
 
 interface TarifarioPanelProps {
   tarifas: Tarifa[];
@@ -18,7 +18,9 @@ export function TarifarioPanel({
   onTarCategoryChange,
   onResetFilters,
 }: TarifarioPanelProps) {
-  const categories = Array.from(new Set(tarifas.map((t) => t.categoria).filter(Boolean)));
+  const categories = Array.from(
+    new Set(tarifas.map((t) => t.categoria).filter(Boolean)),
+  );
 
   const filteredTarifas = tarifas.filter((tf) => {
     if (tarSearch) {
@@ -35,14 +37,19 @@ export function TarifarioPanel({
     <div className="white-card rounded-lg p-6 border border-zinc-200 shadow-sm space-y-6">
       <div className="border-b border-zinc-100 pb-4">
         <h2 className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
-          <Layers className="h-4 w-4 text-zinc-900" /> Tarifario Oficial de Servicios Médicos
+          <Layers className="h-4 w-4 text-zinc-900" /> Tarifario Oficial de
+          Servicios Médicos
         </h2>
-        <p className="text-xs text-zinc-550">Costos para pacientes y reparto porcentual/fijo por convenio</p>
+        <p className="text-xs text-zinc-550">
+          Costos para pacientes y reparto porcentual/fijo por convenio
+        </p>
       </div>
 
       <div className="bg-zinc-50/50 p-4 border border-zinc-200 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="sm:col-span-2">
-          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Buscar Servicio / Especialidad</label>
+          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+            Buscar Servicio / Especialidad
+          </label>
           <input
             type="text"
             placeholder="Ej. Consulta general, ginecologia, ecografía..."
@@ -53,7 +60,9 @@ export function TarifarioPanel({
         </div>
 
         <div>
-          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Categoría</label>
+          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+            Categoría
+          </label>
           <select
             value={tarCategory}
             onChange={(e) => onTarCategoryChange(e.target.value)}
@@ -61,7 +70,9 @@ export function TarifarioPanel({
           >
             <option value="">-- Todas --</option>
             {categories.map((cat, idx) => (
-              <option key={idx} value={cat}>{cat}</option>
+              <option key={idx} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
@@ -96,13 +107,26 @@ export function TarifarioPanel({
             </thead>
             <tbody className="divide-y divide-zinc-200 bg-white">
               {filteredTarifas.map((tf) => (
-                <tr key={tf.id} className="hover:bg-zinc-50/50 transition-colors">
-                  <td className="p-3 font-semibold text-zinc-900">{tf.categoria}</td>
+                <tr
+                  key={tf.id}
+                  className="hover:bg-zinc-50/50 transition-colors"
+                >
+                  <td className="p-3 font-semibold text-zinc-900">
+                    {tf.categoria}
+                  </td>
                   <td className="p-3 text-zinc-700">{tf.descripcion}</td>
-                  <td className="p-3 font-semibold text-zinc-950">S/ {Number(tf.precioTotal).toFixed(2)}</td>
-                  <td className="p-3 text-zinc-800">S/ {Number(tf.comisionMedico).toFixed(2)}</td>
-                  <td className="p-3 text-zinc-800">S/ {Number(tf.comisionClinica).toFixed(2)}</td>
-                  <td className="p-3 text-zinc-500">{tf.requiereTecnico ? 'Samuel (S/ 5.00)' : 'N/A'}</td>
+                  <td className="p-3 font-semibold text-zinc-950">
+                    S/ {Number(tf.precioTotal).toFixed(2)}
+                  </td>
+                  <td className="p-3 text-zinc-800">
+                    S/ {Number(tf.comisionMedico).toFixed(2)}
+                  </td>
+                  <td className="p-3 text-zinc-800">
+                    S/ {Number(tf.comisionClinica).toFixed(2)}
+                  </td>
+                  <td className="p-3 text-zinc-500">
+                    {tf.requiereTecnico ? "Samuel (S/ 5.00)" : "N/A"}
+                  </td>
                 </tr>
               ))}
             </tbody>

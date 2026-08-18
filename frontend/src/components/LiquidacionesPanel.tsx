@@ -1,5 +1,5 @@
-import { Users } from 'lucide-react';
-import type { Medico, Ticket } from '../api';
+import { Users } from "lucide-react";
+import type { Medico, Ticket } from "../api";
 
 interface LiquidacionesPanelProps {
   medicos: Medico[];
@@ -28,7 +28,9 @@ export function LiquidacionesPanel({
   onLiqDateToChange,
   onResetFilters,
 }: LiquidacionesPanelProps) {
-  const specialties = Array.from(new Set(medicos.map((m) => m.especialidad).filter(Boolean)));
+  const specialties = Array.from(
+    new Set(medicos.map((m) => m.especialidad).filter(Boolean)),
+  );
 
   const filteredMedicos = medicos.filter((med) => {
     if (liqSearch) {
@@ -43,14 +45,19 @@ export function LiquidacionesPanel({
     <div className="white-card rounded-lg p-6 border border-zinc-200 shadow-sm space-y-6">
       <div className="border-b border-zinc-100 pb-4">
         <h2 className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
-          <Users className="h-4 w-4 text-zinc-900" /> Liquidación de Comisiones por Médico CMP
+          <Users className="h-4 w-4 text-zinc-900" /> Liquidación de Comisiones
+          por Médico CMP
         </h2>
-        <p className="text-xs text-zinc-550">Cálculo de honorarios profesionales según tarifario oficial</p>
+        <p className="text-xs text-zinc-550">
+          Cálculo de honorarios profesionales según tarifario oficial
+        </p>
       </div>
 
       <div className="bg-zinc-50/50 p-4 border border-zinc-200 rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
         <div className="md:col-span-2">
-          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Nombre Médico</label>
+          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+            Nombre Médico
+          </label>
           <input
             type="text"
             placeholder="Ej. Perez, Ramirez..."
@@ -61,7 +68,9 @@ export function LiquidacionesPanel({
         </div>
 
         <div>
-          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Especialidad</label>
+          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+            Especialidad
+          </label>
           <select
             value={liqSpecialty}
             onChange={(e) => onLiqSpecialtyChange(e.target.value)}
@@ -69,13 +78,17 @@ export function LiquidacionesPanel({
           >
             <option value="">-- Todas --</option>
             {specialties.map((esp, idx) => (
-              <option key={idx} value={esp}>{esp}</option>
+              <option key={idx} value={esp}>
+                {esp}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Desde Fecha</label>
+          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+            Desde Fecha
+          </label>
           <input
             type="date"
             value={liqDateFrom}
@@ -85,7 +98,9 @@ export function LiquidacionesPanel({
         </div>
 
         <div>
-          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Hasta Fecha</label>
+          <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+            Hasta Fecha
+          </label>
           <input
             type="date"
             value={liqDateTo}
@@ -114,7 +129,7 @@ export function LiquidacionesPanel({
           {filteredMedicos.map((med) => {
             const doctorTickets = tickets.filter((t) => {
               if (t.medicoId !== med.id) return false;
-              if (t.estado !== 'ACTIVO') return false;
+              if (t.estado !== "ACTIVO") return false;
 
               if (liqDateFrom) {
                 const dateFromObj = new Date(liqDateFrom);
@@ -130,32 +145,51 @@ export function LiquidacionesPanel({
               return true;
             });
 
-            const totalComision = doctorTickets.reduce((sum, t) => sum + Number(t.montoMedico), 0);
+            const totalComision = doctorTickets.reduce(
+              (sum, t) => sum + Number(t.montoMedico),
+              0,
+            );
 
             return (
-              <div key={med.id} className="bg-zinc-50/50 p-4 rounded-md border border-zinc-200 space-y-3">
+              <div
+                key={med.id}
+                className="bg-zinc-50/50 p-4 rounded-md border border-zinc-200 space-y-3"
+              >
                 <div className="flex items-center justify-between">
-                  <div className="font-semibold text-zinc-900 text-xs">{med.nombre}</div>
+                  <div className="font-semibold text-zinc-900 text-xs">
+                    {med.nombre}
+                  </div>
                   <span className="bg-zinc-100 text-zinc-800 border border-zinc-200 text-[9px] font-medium px-2 py-0.5 rounded">
-                    CMP: {med.cmp || 'N/A'}
+                    CMP: {med.cmp || "N/A"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between border-t border-zinc-200/60 pt-2 text-[11px]">
                   <span className="text-zinc-500">Especialidad:</span>
-                  <span className="font-medium text-zinc-800">{med.especialidad}</span>
+                  <span className="font-medium text-zinc-800">
+                    {med.especialidad}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-dashed border-zinc-200/60 mt-1">
-                  <span className="text-zinc-500 font-medium">Comprobantes ({doctorTickets.length}):</span>
+                  <span className="text-zinc-500 font-medium">
+                    Comprobantes ({doctorTickets.length}):
+                  </span>
                   <span className="font-medium text-zinc-800">
-                    S/ {doctorTickets.reduce((sum, t) => sum + Number(t.montoPaciente), 0).toFixed(2)}
+                    S/{" "}
+                    {doctorTickets
+                      .reduce((sum, t) => sum + Number(t.montoPaciente), 0)
+                      .toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-zinc-200/60">
-                  <span className="text-zinc-505 font-semibold text-zinc-900">Total Comisión Médico:</span>
-                  <span className="font-bold text-emerald-700">S/ {totalComision.toFixed(2)}</span>
+                  <span className="text-zinc-505 font-semibold text-zinc-900">
+                    Total Comisión Médico:
+                  </span>
+                  <span className="font-bold text-emerald-700">
+                    S/ {totalComision.toFixed(2)}
+                  </span>
                 </div>
               </div>
             );

@@ -16,11 +16,17 @@ export class PacientesService {
   }
 
   findOne(id: number) {
-    return this.prisma.paciente.findUnique({ where: { id }, include: { procedencia: true } });
+    return this.prisma.paciente.findUnique({
+      where: { id },
+      include: { procedencia: true },
+    });
   }
 
   update(id: number, updatePacienteDto: UpdatePacienteDto) {
-    return this.prisma.paciente.update({ where: { id }, data: updatePacienteDto });
+    return this.prisma.paciente.update({
+      where: { id },
+      data: updatePacienteDto,
+    });
   }
 
   remove(id: number) {

@@ -10,20 +10,9 @@ export class TicketItemDto {
   @IsString()
   descripcion?: string;
 
+  @IsOptional()
   @IsNumber()
-  precioUnitario: number;
-
-  @IsNumber()
-  cantidad: number;
-
-  @IsNumber()
-  comisionMedico: number;
-
-  @IsNumber()
-  comisionClinica: number;
-
-  @IsNumber()
-  comisionTecnico: number;
+  cantidad?: number;
 }
 
 export class CreateTicketDto {

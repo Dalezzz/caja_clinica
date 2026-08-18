@@ -1,5 +1,5 @@
-import { Receipt, X } from 'lucide-react';
-import type { Medico, Ticket } from '../api';
+import { Receipt, X } from "lucide-react";
+import type { Medico, Ticket } from "../api";
 
 interface HistoryModalProps {
   tickets: Ticket[];
@@ -51,11 +51,14 @@ export function HistoryModal({
   const filteredTickets = tickets.filter((t) => {
     const searchLower = historySearch.toLowerCase().trim();
     if (searchLower) {
-      const matchesPatient = t.paciente?.nombre?.toLowerCase().includes(searchLower);
+      const matchesPatient = t.paciente?.nombre
+        ?.toLowerCase()
+        .includes(searchLower);
       const matchesTicket = t.numeroTicket?.toLowerCase().includes(searchLower);
       const matchesBoleta = t.numeroBoleta?.toLowerCase().includes(searchLower);
       const matchesRuc = t.rucFactura?.toLowerCase().includes(searchLower);
-      if (!matchesPatient && !matchesTicket && !matchesBoleta && !matchesRuc) return false;
+      if (!matchesPatient && !matchesTicket && !matchesBoleta && !matchesRuc)
+        return false;
     }
 
     if (historyDoctorFilter && t.medicoId !== Number(historyDoctorFilter)) {
@@ -89,7 +92,10 @@ export function HistoryModal({
   const totalItems = filteredTickets.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const currentPage = Math.min(historyCurrentPage, totalPages);
-  const paginatedTickets = filteredTickets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const paginatedTickets = filteredTickets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   return (
     <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
@@ -98,8 +104,13 @@ export function HistoryModal({
           <div className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-zinc-900" />
             <div>
-              <h3 className="font-semibold text-zinc-900 text-sm">Historial Completo de Comprobantes</h3>
-              <p className="text-[11px] text-zinc-500">Mostrando {totalItems} registros coincidentes de un total de {tickets.length}</p>
+              <h3 className="font-semibold text-zinc-900 text-sm">
+                Historial Completo de Comprobantes
+              </h3>
+              <p className="text-[11px] text-zinc-500">
+                Mostrando {totalItems} registros coincidentes de un total de{" "}
+                {tickets.length}
+              </p>
             </div>
           </div>
           <button
@@ -112,7 +123,9 @@ export function HistoryModal({
 
         <div className="bg-zinc-50/50 p-4 border-b border-zinc-150 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           <div className="lg:col-span-2">
-            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Buscar Paciente / Ticket / RUC</label>
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+              Buscar Paciente / Ticket / RUC
+            </label>
             <input
               type="text"
               placeholder="Ej. Juan Perez, 2026-07-30..."
@@ -126,7 +139,9 @@ export function HistoryModal({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Médico Tratante</label>
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+              Médico Tratante
+            </label>
             <select
               value={historyDoctorFilter}
               onChange={(e) => {
@@ -145,7 +160,9 @@ export function HistoryModal({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Método de Pago</label>
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+              Método de Pago
+            </label>
             <select
               value={historyPaymentFilter}
               onChange={(e) => {
@@ -163,7 +180,9 @@ export function HistoryModal({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Estado</label>
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+              Estado
+            </label>
             <select
               value={historyStatusFilter}
               onChange={(e) => {
@@ -182,12 +201,12 @@ export function HistoryModal({
             <button
               type="button"
               onClick={() => {
-                setHistorySearch('');
-                setHistoryDoctorFilter('');
-                setHistoryDateFrom('');
-                setHistoryDateTo('');
-                setHistoryPaymentFilter('');
-                setHistoryStatusFilter('');
+                setHistorySearch("");
+                setHistoryDoctorFilter("");
+                setHistoryDateFrom("");
+                setHistoryDateTo("");
+                setHistoryPaymentFilter("");
+                setHistoryStatusFilter("");
                 setHistoryCurrentPage(1);
               }}
               className="h-8 w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold border border-zinc-200 rounded-md text-xs transition"
@@ -197,7 +216,9 @@ export function HistoryModal({
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Desde Fecha</label>
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+              Desde Fecha
+            </label>
             <input
               type="date"
               value={historyDateFrom}
@@ -210,7 +231,9 @@ export function HistoryModal({
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Hasta Fecha</label>
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">
+              Hasta Fecha
+            </label>
             <input
               type="date"
               value={historyDateTo}
@@ -226,7 +249,8 @@ export function HistoryModal({
         <div className="flex-1 overflow-y-auto min-h-[300px]">
           {paginatedTickets.length === 0 ? (
             <div className="text-center py-20 text-zinc-400 text-xs">
-              No se encontraron comprobantes coincidentes con los filtros aplicados.
+              No se encontraron comprobantes coincidentes con los filtros
+              aplicados.
             </div>
           ) : (
             <table className="w-full text-left text-xs border-collapse">
@@ -244,23 +268,46 @@ export function HistoryModal({
               </thead>
               <tbody className="divide-y divide-zinc-150 bg-white">
                 {paginatedTickets.map((t) => (
-                  <tr key={t.id} className="hover:bg-zinc-50/50 transition-colors">
+                  <tr
+                    key={t.id}
+                    className="hover:bg-zinc-50/50 transition-colors"
+                  >
                     <td className="p-3 pl-6">
-                      <div className="font-mono font-semibold text-zinc-900">{t.numeroBoleta || t.numeroTicket}</div>
+                      <div className="font-mono font-semibold text-zinc-900">
+                        {t.numeroBoleta || t.numeroTicket}
+                      </div>
                       <div className="text-[10px] text-zinc-400 font-medium">
-                        {(t.tipoComprobante || (t.numeroBoleta ? 'BOLETA_ELECTRONICA' : 'TICKET_INTERNO')).replace('_ELECTRONICA', '').replace('_INTERNO', '')}
+                        {(
+                          t.tipoComprobante ||
+                          (t.numeroBoleta
+                            ? "BOLETA_ELECTRONICA"
+                            : "TICKET_INTERNO")
+                        )
+                          .replace("_ELECTRONICA", "")
+                          .replace("_INTERNO", "")}
                       </div>
                     </td>
-                    <td className="p-3 text-zinc-500">{new Date(t.fecha).toLocaleString()}</td>
+                    <td className="p-3 text-zinc-500">
+                      {new Date(t.fecha).toLocaleString()}
+                    </td>
                     <td className="p-3">
-                      <div className="font-semibold text-zinc-950">{t.paciente?.nombre}</div>
-                      <div className="text-[10px] text-zinc-500">Doc: {t.paciente?.numeroDocumento || 'S/D'} • Cel: {t.paciente?.celular || 'S/N'}</div>
+                      <div className="font-semibold text-zinc-950">
+                        {t.paciente?.nombre}
+                      </div>
+                      <div className="text-[10px] text-zinc-500">
+                        Doc: {t.paciente?.numeroDocumento || "S/D"} • Cel:{" "}
+                        {t.paciente?.celular || "S/N"}
+                      </div>
                     </td>
                     <td className="p-3 text-zinc-600">
                       <div>Dr. {t.medico?.nombre}</div>
-                      <div className="text-[10px] text-zinc-400">{t.consultorio}</div>
+                      <div className="text-[10px] text-zinc-400">
+                        {t.consultorio}
+                      </div>
                     </td>
-                    <td className="p-3 font-bold text-zinc-950">S/ {Number(t.montoPaciente).toFixed(2)}</td>
+                    <td className="p-3 font-bold text-zinc-950">
+                      S/ {Number(t.montoPaciente).toFixed(2)}
+                    </td>
                     <td className="p-3">
                       <span className="bg-zinc-100 text-zinc-800 border border-zinc-200 text-[10px] font-semibold px-2 py-0.5 rounded">
                         {t.metodoPago}
@@ -269,9 +316,9 @@ export function HistoryModal({
                     <td className="p-3">
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                          t.estado === 'ACTIVO'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                          t.estado === "ACTIVO"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-rose-50 text-rose-700 border-rose-200"
                         }`}
                       >
                         {t.estado}
@@ -284,7 +331,7 @@ export function HistoryModal({
                       >
                         <Receipt className="h-3 w-3" /> Imprimir
                       </button>
-                      {t.estado === 'ACTIVO' && (
+                      {t.estado === "ACTIVO" && (
                         <button
                           onClick={() => onAnularTicket(t.id)}
                           className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded transition"
@@ -303,19 +350,26 @@ export function HistoryModal({
         {totalPages > 1 && (
           <div className="px-6 py-3 border-t border-zinc-150 bg-zinc-50/50 flex items-center justify-between text-xs">
             <div className="text-zinc-500">
-              Página <span className="font-semibold text-zinc-800">{currentPage}</span> de <span className="font-semibold text-zinc-800">{totalPages}</span>
+              Página{" "}
+              <span className="font-semibold text-zinc-800">{currentPage}</span>{" "}
+              de{" "}
+              <span className="font-semibold text-zinc-800">{totalPages}</span>
             </div>
             <div className="flex gap-1.5">
               <button
                 disabled={currentPage === 1}
-                onClick={() => setHistoryCurrentPage(Math.max(1, currentPage - 1))}
+                onClick={() =>
+                  setHistoryCurrentPage(Math.max(1, currentPage - 1))
+                }
                 className="px-3 py-1 bg-white border border-zinc-200 rounded text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 disabled:hover:bg-white transition"
               >
                 Anterior
               </button>
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setHistoryCurrentPage(Math.min(totalPages, currentPage + 1))}
+                onClick={() =>
+                  setHistoryCurrentPage(Math.min(totalPages, currentPage + 1))
+                }
                 className="px-3 py-1 bg-white border border-zinc-200 rounded text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 disabled:hover:bg-white transition"
               >
                 Siguiente

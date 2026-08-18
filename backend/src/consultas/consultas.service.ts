@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
 import { chromium } from 'playwright';
 
 // Cargar ubigeo-peru de forma segura para CommonJS
@@ -6,7 +10,11 @@ const ubigeos = require('ubigeo-peru');
 
 const cleanText = (str: string): string => {
   if (!str) return '';
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim();
 };
 
 const DEPARTAMENTOS = Array.from(
@@ -25,7 +33,10 @@ const findUbigeo = (depName: string, provName: string, distName: string) => {
 
   const inei = ubigeos.inei;
   const dep = inei.find(
-    (u: any) => u.provincia === '00' && u.distrito === '00' && cleanText(u.nombre) === depName,
+    (u: any) =>
+      u.provincia === '00' &&
+      u.distrito === '00' &&
+      cleanText(u.nombre) === depName,
   );
   if (!dep) return null;
 
@@ -48,7 +59,11 @@ const findUbigeo = (depName: string, provName: string, distName: string) => {
   if (!dist) return null;
 
   const ubigeo_sunat = `${dist.departamento}${dist.provincia}${dist.distrito}`;
-  const ubigeo = [dist.departamento, `${dist.departamento}${dist.provincia}`, ubigeo_sunat];
+  const ubigeo = [
+    dist.departamento,
+    `${dist.departamento}${dist.provincia}`,
+    ubigeo_sunat,
+  ];
   return { ubigeo_sunat, ubigeo };
 };
 
@@ -56,7 +71,9 @@ const findUbigeo = (depName: string, provName: string, distName: string) => {
 export class ConsultasService {
   async consultarDni(dni: string) {
     if (!/^\d{8}$/.test(dni)) {
-      throw new BadRequestException('El DNI debe contener exactamente 8 dígitos.');
+      throw new BadRequestException(
+        'El DNI debe contener exactamente 8 dígitos.',
+      );
     }
 
     try {
@@ -64,8 +81,9 @@ export class ConsultasService {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
       });
 
@@ -78,7 +96,10 @@ export class ConsultasService {
       const buffer = await response.arrayBuffer();
       const contentType = response.headers.get('content-type') || '';
       let text = '';
-      if (contentType.toLowerCase().includes('iso-8859-1') || contentType.toLowerCase().includes('latin1')) {
+      if (
+        contentType.toLowerCase().includes('iso-8859-1') ||
+        contentType.toLowerCase().includes('latin1')
+      ) {
         const decoder = new TextDecoder('iso-8859-1');
         text = decoder.decode(buffer);
       } else {
@@ -111,7 +132,9 @@ export class ConsultasService {
 
   async consultarRuc(ruc: string) {
     if (!/^\d{11}$/.test(ruc)) {
-      throw new BadRequestException('El RUC debe contener exactamente 11 dígitos.');
+      throw new BadRequestException(
+        'El RUC debe contener exactamente 11 dígitos.',
+      );
     }
 
     let browser;
@@ -121,21 +144,26 @@ export class ConsultasService {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
       const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        viewport: { width: 1280, height: 720 }
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        viewport: { width: 1280, height: 720 },
       });
       const page = await context.newPage();
-      await page.goto('https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp');
+      await page.goto(
+        'https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp',
+      );
       await page.getByRole('textbox', { name: 'Ingrese RUC' }).fill(ruc);
       await page.getByRole('button', { name: 'Buscar' }).click();
-      
+
       // Esperar que cargue la página de resultados
-      await page.waitForSelector('h4:has-text("Número de RUC:")', { timeout: 10000 });
+      await page.waitForSelector('h4:has-text("Número de RUC:")', {
+        timeout: 10000,
+      });
 
       const data = await page.evaluate(() => {
         const getTextByHeading = (text: string) => {
           const headings = Array.from(document.querySelectorAll('h4'));
-          const heading = headings.find(h => h.textContent?.includes(text));
+          const heading = headings.find((h) => h.textContent?.includes(text));
           if (heading) {
             const row = heading.closest('.row');
             if (row) {
@@ -147,7 +175,9 @@ export class ConsultasService {
         };
 
         const headings = Array.from(document.querySelectorAll('h4'));
-        const rucHeading = headings.find(h => h.textContent?.match(/^\d{11}\s+-/));
+        const rucHeading = headings.find((h) =>
+          h.textContent?.match(/^\d{11}\s+-/),
+        );
         let rucNum = '';
         let razonSocial = '';
         if (rucHeading && rucHeading.textContent) {
@@ -165,9 +195,10 @@ export class ConsultasService {
         let es_agente_de_percepcion = 'NO';
 
         const tds = Array.from(document.querySelectorAll('td'));
-        tds.forEach(td => {
+        tds.forEach((td) => {
           const text = td.textContent?.toUpperCase() || '';
-          if (text.includes('BUENOS CONTRIBUYENTES')) es_buen_contribuyente = 'SI';
+          if (text.includes('BUENOS CONTRIBUYENTES'))
+            es_buen_contribuyente = 'SI';
           if (text.includes('RETENCIÓN')) es_agente_de_retencion = 'SI';
           if (text.includes('PERCEPCIÓN')) es_agente_de_percepcion = 'SI';
         });
@@ -177,14 +208,16 @@ export class ConsultasService {
           nombre_o_razon_social: razonSocial,
           estado,
           condicion,
-          direccion_completa: dirCompleta ? dirCompleta.replace(/\s+/g, ' ') : '',
+          direccion_completa: dirCompleta
+            ? dirCompleta.replace(/\s+/g, ' ')
+            : '',
           es_buen_contribuyente,
           es_agente_de_retencion,
           es_agente_de_percepcion,
         };
       });
 
-      let parsedAddress = {
+      const parsedAddress = {
         departamento: '',
         provincia: '',
         distrito: '',
@@ -211,7 +244,10 @@ export class ConsultasService {
 
           if (matchedDep) {
             parsedAddress.departamento = matchedDep;
-            parsedAddress.direccion = rem.substring(0, textCleaned.lastIndexOf(matchedDep)).trim().replace(/\s+/g, ' ');
+            parsedAddress.direccion = rem
+              .substring(0, textCleaned.lastIndexOf(matchedDep))
+              .trim()
+              .replace(/\s+/g, ' ');
           } else {
             parsedAddress.direccion = rem.trim();
           }
@@ -219,7 +255,11 @@ export class ConsultasService {
           parsedAddress.provincia = provincia;
           parsedAddress.distrito = distrito;
 
-          const u = findUbigeo(parsedAddress.departamento || '', parsedAddress.provincia, parsedAddress.distrito);
+          const u = findUbigeo(
+            parsedAddress.departamento || '',
+            parsedAddress.provincia,
+            parsedAddress.distrito,
+          );
           if (u) {
             parsedAddress.ubigeo_sunat = u.ubigeo_sunat;
             parsedAddress.ubigeo = u.ubigeo;
