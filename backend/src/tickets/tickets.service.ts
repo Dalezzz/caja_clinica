@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTicketDto, TicketItemDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
+import { SunatService } from '../sunat/sunat.service';
 
 @Injectable()
 export class TicketsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(TicketsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private sunatService: SunatService,
+  ) {}
 
   async create(createTicketDto: CreateTicketDto) {
     const caja = await this.prisma.cajaDiaria.findFirst({
@@ -152,6 +158,20 @@ export class TicketsService {
         where: { id: caja.id },
         data: { montoDigitalEsperado: { increment: montoPaciente } },
       });
+    }
+
+    // Comprobar si hay autoemisión SUNAT
+    try {
+      const ajustes = await this.prisma.ajustes.findFirst();
+      if (ajustes?.sunatAutoEmitir && ajustes?.sunatRuc && ajustes?.sunatUsuario && ajustes?.sunatClave) {
+        // Lanzamos la emisión en background para no bloquear la respuesta del ticket
+        this.logger.log(`Autoemisión activada. Emitiendo boleta para ticket ${ticket.id}...`);
+        this.sunatService.emitirBoleta(ticket.id).catch(err => {
+          this.logger.error(`Error en autoemisión SUNAT para ticket ${ticket.id}: ${err.message}`);
+        });
+      }
+    } catch (err) {
+      this.logger.error(`Error verificando autoemisión SUNAT: ${err.message}`);
     }
 
     return ticket;

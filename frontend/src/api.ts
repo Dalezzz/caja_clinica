@@ -123,8 +123,10 @@ export interface Ticket {
   consultorio?: string;
   cajaDiariaId: number;
   cajaDiaria?: CajaDiaria;
-  sunatProcesado: boolean;
+  sunatEstado?: "PENDIENTE" | "EMITIDO" | "ERROR";
   sunatError?: string;
+  sunatPdfPath?: string;
+  sunatXmlPath?: string;
   creadoEn: string;
 }
 
@@ -186,7 +188,7 @@ export interface ComprobantePagoMedico {
   }>;
 }
 
-export interface AjustesWhatsApp {
+export interface Ajustes {
   whatsappEnabled: boolean;
   whatsappNumeroNegocio: string;
   whatsappGerentes: string;
@@ -196,6 +198,13 @@ export interface AjustesWhatsApp {
   whatsappCronTime: string;
   whatsappFrecuencia: string;
   whatsappAlCierre: boolean;
+  
+  // SUNAT
+  sunatRuc?: string;
+  sunatUsuario?: string;
+  sunatClave?: string;
+  sunatAutoEmitir?: boolean;
+  
   actualizadoEn?: string;
 }
 
@@ -620,13 +629,13 @@ const api = {
     return this.post("reportes/whatsapp/mensual", { mes, anio });
   },
 
-  async obtenerAjustesWhatsApp(): Promise<AjustesWhatsApp> {
+  async obtenerAjustes(): Promise<Ajustes> {
     return this.get("reportes/configuracion");
   },
 
-  async guardarAjustesWhatsApp(
-    ajustes: Partial<AjustesWhatsApp>,
-  ): Promise<AjustesWhatsApp> {
+  async guardarAjustes(
+    ajustes: Partial<Ajustes>,
+  ): Promise<Ajustes> {
     return this.patch("reportes/configuracion", ajustes);
   },
 
@@ -644,6 +653,15 @@ const api = {
 
   async sendMissedReports(): Promise<any> {
     return this.post("whatsapp/send-missed", {});
+  },
+
+  // SUNAT
+  async emitirBoletaSunat(ticketId: number): Promise<any> {
+    return this.post(`sunat/emitir/${ticketId}`, {});
+  },
+
+  descargarBoletaPdfUrl(ticketId: number): string {
+    return `${API_BASE_URL}/sunat/descargar-pdf/${ticketId}`;
   },
 };
 

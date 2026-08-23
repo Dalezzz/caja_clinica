@@ -13,7 +13,7 @@ import {
   X,
   MessageSquare,
 } from "lucide-react";
-import type { Medico, Procedencia, Tarifa, AjustesWhatsApp } from "../api";
+import type { Medico, Procedencia, Tarifa, Ajustes } from "../api";
 
 interface AdminPanelProps {
   medicos: Medico[];
@@ -63,8 +63,8 @@ interface AdminPanelProps {
   onCreateMedico: () => void;
   onCreateTarifa: () => void;
   onCreateProc: () => void;
-  ajustesWhatsApp: AjustesWhatsApp | null;
-  onSaveAjustesWhatsApp: (ajustes: Partial<AjustesWhatsApp>) => void;
+  ajustes: Ajustes | null;
+  onSaveAjustes: (ajustes: Partial<Ajustes>) => void;
 }
 
 export const AdminPanel = React.memo(function AdminPanel({
@@ -113,8 +113,8 @@ export const AdminPanel = React.memo(function AdminPanel({
   onCreateMedico,
   onCreateTarifa,
   onCreateProc,
-  ajustesWhatsApp,
-  onSaveAjustesWhatsApp,
+  ajustes,
+  onSaveAjustes,
 }: AdminPanelProps) {
   const [formEnabled, setFormEnabled] = useState(false);
   const [formNumero, setFormNumero] = useState("");
@@ -131,7 +131,13 @@ export const AdminPanel = React.memo(function AdminPanel({
   const [wsStatus, setWsStatus] = useState<string>("disconnected");
   const [wsQr, setWsQr] = useState<string | null>(null);
   
-  const [activeAdminTab, setActiveAdminTab] = useState<'general' | 'whatsapp'>('general');
+  const [activeAdminTab, setActiveAdminTab] = useState<'general' | 'whatsapp' | 'sunat'>('general');
+
+  // SUNAT
+  const [sunatRuc, setSunatRuc] = useState("");
+  const [sunatUsuario, setSunatUsuario] = useState("");
+  const [sunatClave, setSunatClave] = useState("");
+  const [sunatAutoEmitir, setSunatAutoEmitir] = useState(false);
 
   const [missedReport, setMissedReport] = useState<{missed: boolean, message: string} | null>(null);
   const [sendingMissed, setSendingMissed] = useState(false);
@@ -167,22 +173,27 @@ export const AdminPanel = React.memo(function AdminPanel({
   }, [formEnabled]);
 
   useEffect(() => {
-    if (ajustesWhatsApp) {
-      setFormEnabled(ajustesWhatsApp.whatsappEnabled);
-      setFormNumero(ajustesWhatsApp.whatsappNumeroNegocio);
-      setFormGerentes(ajustesWhatsApp.whatsappGerentes);
-      setFormProvider(ajustesWhatsApp.whatsappProvider);
-      setFormToken(ajustesWhatsApp.whatsappToken);
-      setFormApiUrl(ajustesWhatsApp.whatsappApiUrl);
-      setFormCronTime(ajustesWhatsApp.whatsappCronTime || "19:30");
-      setFormFrecuencia(ajustesWhatsApp.whatsappFrecuencia || "diario");
-      setFormAlCierre(ajustesWhatsApp.whatsappAlCierre || false);
+    if (ajustes) {
+      setFormEnabled(ajustes.whatsappEnabled);
+      setFormNumero(ajustes.whatsappNumeroNegocio);
+      setFormGerentes(ajustes.whatsappGerentes);
+      setFormProvider(ajustes.whatsappProvider);
+      setFormToken(ajustes.whatsappToken);
+      setFormApiUrl(ajustes.whatsappApiUrl);
+      setFormCronTime(ajustes.whatsappCronTime || "19:30");
+      setFormFrecuencia(ajustes.whatsappFrecuencia || "diario");
+      setFormAlCierre(ajustes.whatsappAlCierre || false);
+      
+      setSunatRuc(ajustes.sunatRuc || "");
+      setSunatUsuario(ajustes.sunatUsuario || "");
+      setSunatClave(ajustes.sunatClave || "");
+      setSunatAutoEmitir(ajustes.sunatAutoEmitir || false);
     }
-  }, [ajustesWhatsApp]);
+  }, [ajustes]);
 
   const handleSaveWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveAjustesWhatsApp({
+    onSaveAjustes({
       whatsappEnabled: formEnabled,
       whatsappNumeroNegocio: formNumero,
       whatsappGerentes: formGerentes,
@@ -192,6 +203,16 @@ export const AdminPanel = React.memo(function AdminPanel({
       whatsappCronTime: formCronTime,
       whatsappFrecuencia: formFrecuencia,
       whatsappAlCierre: formAlCierre,
+    });
+  };
+
+  const handleSaveSunat = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSaveAjustes({
+      sunatRuc,
+      sunatUsuario,
+      sunatClave,
+      sunatAutoEmitir,
     });
   };
   return (
@@ -253,6 +274,17 @@ export const AdminPanel = React.memo(function AdminPanel({
         >
           <MessageSquare className="h-3.5 w-3.5" />
           WhatsApp Bot
+        </button>
+        <button
+          className={`px-4 py-2 text-xs font-semibold flex items-center gap-1.5 ${
+            activeAdminTab === 'sunat'
+              ? 'border-b-2 border-zinc-900 text-zinc-900'
+              : 'text-zinc-500 hover:text-zinc-700'
+          }`}
+          onClick={() => setActiveAdminTab('sunat')}
+        >
+          <Building className="h-3.5 w-3.5" />
+          SUNAT (Facturación)
         </button>
       </div>
 
@@ -527,6 +559,95 @@ export const AdminPanel = React.memo(function AdminPanel({
           </div>
         )}
       </div>
+      </div>
+
+      <div className={activeAdminTab === 'sunat' ? 'block' : 'hidden'}>
+        <div className="white-card rounded-lg border border-zinc-200 shadow-sm p-6 space-y-5">
+          <div className="flex items-center gap-3 border-b border-zinc-100 pb-3">
+            <div className="h-8 w-8 rounded-lg bg-red-50 text-red-700 flex items-center justify-center border border-red-200">
+              <Building className="h-4 w-4 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900">
+                Configuración de Facturación Electrónica (SUNAT)
+              </h3>
+              <p className="text-xs text-zinc-500">
+                Configura las credenciales de Clave SOL para la emisión de Boletas Automáticas con Playwright.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveSunat} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1">
+                  Número de RUC *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="20000000000"
+                  value={sunatRuc}
+                  onChange={(e) => setSunatRuc(e.target.value)}
+                  className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-950 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1">
+                  Usuario SOL *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="USUARIO123"
+                  value={sunatUsuario}
+                  onChange={(e) => setSunatUsuario(e.target.value)}
+                  className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-950 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1">
+                  Clave SOL *
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="ClaveSecreta"
+                  value={sunatClave}
+                  onChange={(e) => setSunatClave(e.target.value)}
+                  className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-950 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 pb-2 border-t border-zinc-100">
+              <label className="flex items-center gap-2 cursor-pointer mt-2">
+                <input
+                  type="checkbox"
+                  checked={sunatAutoEmitir}
+                  onChange={(e) => setSunatAutoEmitir(e.target.checked)}
+                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
+                />
+                <span className="text-xs font-semibold text-zinc-800">
+                  Emitir boleta automáticamente al generar el Ticket de atención.
+                </span>
+              </label>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={adminSaving}
+                className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white font-medium px-4 py-2 rounded text-xs flex items-center gap-1.5 shadow transition"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Guardar Configuración SUNAT
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div className={activeAdminTab === 'general' ? 'space-y-6 block' : 'hidden'}>

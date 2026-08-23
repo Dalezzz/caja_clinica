@@ -23,6 +23,8 @@ interface HistoryModalProps {
   setHistoryCurrentPage: (value: number) => void;
   onPrintTicket: (ticket: Ticket) => void;
   onAnularTicket: (ticketId: number) => void;
+  onEmitirSunat: (ticketId: number) => void;
+  onDescargarSunatPdf: (ticketId: number) => void;
 }
 
 export function HistoryModal({
@@ -46,6 +48,8 @@ export function HistoryModal({
   setHistoryCurrentPage,
   onPrintTicket,
   onAnularTicket,
+  onEmitirSunat,
+  onDescargarSunatPdf,
 }: HistoryModalProps) {
   const [localSearch, setLocalSearch] = useState(historySearch);
 
@@ -328,15 +332,27 @@ export function HistoryModal({
                       </span>
                     </td>
                     <td className="p-3">
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                          t.estado === "ACTIVO"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-rose-50 text-rose-700 border-rose-200"
-                        }`}
-                      >
-                        {t.estado}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                            t.estado === "ACTIVO"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-rose-50 text-rose-700 border-rose-200"
+                          }`}
+                        >
+                          {t.estado}
+                        </span>
+                        {t.sunatEstado === "EMITIDO" && (
+                          <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium ring-1 ring-inset bg-blue-50 text-blue-700 ring-blue-600/20">
+                            SUNAT OK
+                          </span>
+                        )}
+                        {t.sunatEstado === "ERROR" && (
+                          <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium ring-1 ring-inset bg-red-50 text-red-700 ring-red-600/20" title={t.sunatError}>
+                            SUNAT ERR
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3 pr-6 text-right space-x-1.5">
                       <button
@@ -352,6 +368,24 @@ export function HistoryModal({
                         >
                           Anular
                         </button>
+                      )}
+                      
+                      {t.estado === "ACTIVO" && (
+                        t.sunatEstado === "EMITIDO" ? (
+                          <button
+                            onClick={() => onDescargarSunatPdf(t.id)}
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded transition"
+                          >
+                            PDF Boleta
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onEmitirSunat(t.id)}
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded transition"
+                          >
+                            Emitir SUNAT
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>

@@ -22,6 +22,7 @@ import { EstadisticasMedicoModule } from './estadisticas-medico/estadisticas-med
 import { ComprobantePagoMedicoModule } from './comprobante-pago-medico/comprobante-pago-medico.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
+import { SunatModule } from './sunat/sunat.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
@@ -48,6 +49,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
     ComprobantePagoMedicoModule,
     ReportesModule,
     PdfGeneratorModule,
+    SunatModule,
   ],
   controllers: [AppController],
   providers: (() => {

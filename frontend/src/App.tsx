@@ -31,7 +31,7 @@ import api, {
   INITIAL_MEDICOS,
   INITIAL_TARIFAS,
   buildHeaders,
-  AjustesWhatsApp,
+  Ajustes,
   setAuthToken,
 } from "./api";
 import type { TabType } from "./types";
@@ -114,8 +114,8 @@ function App() {
   const [caja, setCaja] = useState<CajaDiaria | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [egresos, setEgresos] = useState<Egreso[]>([]);
-  const [ajustesWhatsApp, setAjustesWhatsApp] =
-    useState<AjustesWhatsApp | null>(null);
+  const [ajustes, setAjustes] =
+    useState<Ajustes | null>(null);
 
   // POS Patient Form State
   const [tipoDoc, setTipoDoc] = useState<"DNI" | "CE" | "PASAPORTE">("DNI");
@@ -288,6 +288,24 @@ function App() {
       console.error("Error al anular ticket:", err);
       alert("No se pudo anular el comprobante.");
     }
+  };
+
+  const handleEmitirSunat = async (ticketId: number) => {
+    if (!window.confirm("¿Está seguro de emitir este comprobante a SUNAT ahora mismo?")) return;
+    try {
+      // Optimizacion UI: Marcamos como procesando si quisieramos
+      await api.emitirBoletaSunat(ticketId);
+      alert("Boleta enviada a procesar a SUNAT. Actualiza en unos segundos para ver el estado.");
+      loadAllData(); // Recargar tickets para ver el nuevo estado
+    } catch (err: any) {
+      console.error("Error emitiendo SUNAT:", err);
+      alert("Error al emitir boleta en SUNAT.");
+    }
+  };
+
+  const handleDescargarSunatPdf = (ticketId: number) => {
+    const url = api.descargarBoletaPdfUrl(ticketId);
+    window.open(url, "_blank");
   };
 
   const handleSaveMedico = async (id: number) => {
@@ -597,15 +615,15 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeTab]);
 
-  const handleSaveAjustesWhatsApp = async (
-    ajustes: Partial<AjustesWhatsApp>,
+  const handleSaveAjustes = async (
+    nuevosAjustes: Partial<Ajustes>,
   ) => {
     setAdminSaving(true);
     setAdminError(null);
     try {
-      const updated = await api.guardarAjustesWhatsApp(ajustes);
-      setAjustesWhatsApp(updated);
-      setAdminSuccess("Configuración de WhatsApp guardada correctamente.");
+      const updated = await api.guardarAjustes(nuevosAjustes);
+      setAjustes(updated);
+      setAdminSuccess("Configuración guardada correctamente.");
       setTimeout(() => setAdminSuccess(null), 3000);
     } catch (err: any) {
       setAdminError(
@@ -643,8 +661,8 @@ function App() {
     } catch {}
 
     try {
-      const fetchedAjustes = await api.obtenerAjustesWhatsApp();
-      if (fetchedAjustes) setAjustesWhatsApp(fetchedAjustes);
+      const fetchedAjustes = await api.obtenerAjustes();
+      if (fetchedAjustes) setAjustes(fetchedAjustes);
     } catch {}
   };
 
@@ -1679,8 +1697,8 @@ function App() {
               onCreateMedico={handleCreateMedico}
               onCreateTarifa={handleCreateTarifa}
               onCreateProc={handleCreateProc}
-              ajustesWhatsApp={ajustesWhatsApp}
-              onSaveAjustesWhatsApp={handleSaveAjustesWhatsApp}
+              ajustes={ajustes}
+              onSaveAjustes={handleSaveAjustes}
             />
           )}
         </main>
@@ -1714,6 +1732,8 @@ function App() {
         setHistoryCurrentPage={setHistoryCurrentPage}
         onPrintTicket={(ticket) => setPrintedTicket(ticket)}
         onAnularTicket={handleAnularTicket}
+        onEmitirSunat={handleEmitirSunat}
+        onDescargarSunatPdf={handleDescargarSunatPdf}
       />
 
       {showAdminModeModal && (

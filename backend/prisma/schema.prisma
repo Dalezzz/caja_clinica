@@ -363,6 +363,13 @@ model Ajustes {
   whatsappUltimoEnvio   DateTime?
   whatsappAlCierre      Boolean  @default(false)
   whatsappFrecuencia    String   @default("diario")
+  
+  // Configuración SUNAT
+  sunatRuc              String   @default("")
+  sunatUsuario          String   @default("")
+  sunatClave            String   @default("")
+  sunatAutoEmitir       Boolean  @default(false)
+  
   actualizadoEn         DateTime @updatedAt
 
   @@map("ajustes")
