@@ -10,4 +10,5 @@ export type TabType =
   | "alquileres"
   | "comprobantes"
   | "estadisticas"
-  | "reportes";
+  | "reportes"
+  | "farmacia";

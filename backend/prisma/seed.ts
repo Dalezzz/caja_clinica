@@ -22,6 +22,7 @@ async function main() {
   // 1. Usuarios
   const adminHash = await bcrypt.hash('admin1234', 10);
   const userHash = await bcrypt.hash('user1234', 10);
+  const farmaciaHash = await bcrypt.hash('farmacia1234', 10);
 
   const adminUser = await prisma.usuario.upsert({
     where: { usuario: 'admin' },
@@ -45,7 +46,18 @@ async function main() {
     },
   });
 
-  console.log('✅ Usuarios listos:', [adminUser.usuario, recepcionistaUser.usuario].join(', '));
+  const farmaciaUser = await prisma.usuario.upsert({
+    where: { usuario: 'farmacia' },
+    update: { contrasena: farmaciaHash },
+    create: {
+      nombre: 'Encargado de Farmacia',
+      usuario: 'farmacia',
+      contrasena: farmaciaHash,
+      rol: RolUsuario.FARMACIA,
+    },
+  });
+
+  console.log('✅ Usuarios listos:', [adminUser.usuario, recepcionistaUser.usuario, farmaciaUser.usuario].join(', '));
 
   // 2. Procedencias
   const procedenciasData = [
@@ -207,8 +219,26 @@ async function main() {
 
       const numeroTicket = `${diaFecha.toISOString().split('T')[0]}-${String(t + 1).padStart(4, '0')}`;
 
-      await prisma.ticket.create({
-        data: {
+      await prisma.ticket.upsert({
+        where: { numeroTicket },
+        update: {
+          numeroBoleta: `B001-${String(totalTicketsCreados + 100).padStart(8, '0')}`,
+          fecha: horaTicket,
+          pacienteId: paciente.id,
+          medicoId: medico.id,
+          tarifaId: tarifa.id,
+          descripcionAdicional: tarifa.descripcion,
+          metodoPago: metodo,
+          montoPaciente,
+          montoMedico,
+          montoClinica,
+          montoTecnico,
+          nombreTecnico: tarifa.requiereTecnico ? 'Samuel Placas' : null,
+          estado: EstadoTicket.ACTIVO,
+          cajaDiariaId: caja.id,
+          usuarioCreadorId: recepcionistaUser.id,
+        },
+        create: {
           numeroTicket,
           numeroBoleta: `B001-${String(totalTicketsCreados + 100).padStart(8, '0')}`,
           fecha: horaTicket,

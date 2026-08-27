@@ -8,39 +8,38 @@ export class EgresosService {
   constructor(private prisma: PrismaService) {}
 
   async create(createEgresoDto: CreateEgresoDto) {
-    const caja = await this.prisma.cajaDiaria.findFirst({
-      where: { abierta: true },
-      orderBy: { fecha: 'desc' },
-    });
-
-    if (!caja) {
-      throw new NotFoundException('No hay caja diaria abierta');
-    }
-
-    let usuarioEgresoId = (createEgresoDto as any).usuarioEgresoId as
-      number | undefined;
-    if (!usuarioEgresoId) {
-      const admin = await this.prisma.usuario.findFirst({
-        orderBy: { id: 'asc' },
+    return this.prisma.$transaction(async (tx) => {
+      const caja = await tx.cajaDiaria.findFirst({
+        where: { abierta: true },
+        orderBy: { fecha: 'desc' },
       });
-      usuarioEgresoId = admin?.id || 1;
-    }
 
-    const egreso = await this.prisma.egreso.create({
-      data: {
-        ...createEgresoDto,
-        cajaDiariaId: caja.id,
-        usuarioEgresoId,
-      },
-      include: { cajaDiaria: true },
+      if (!caja) {
+        throw new NotFoundException('No hay caja diaria abierta');
+      }
+
+      let usuarioEgresoId = (createEgresoDto as any).usuarioEgresoId as
+        number | undefined;
+      if (!usuarioEgresoId) {
+        usuarioEgresoId = 1;
+      }
+
+      const egreso = await tx.egreso.create({
+        data: {
+          ...createEgresoDto,
+          cajaDiariaId: caja.id,
+          usuarioEgresoId,
+        },
+        include: { cajaDiaria: true },
+      });
+
+      await tx.cajaDiaria.update({
+        where: { id: caja.id },
+        data: { montoEfectivoEsperado: { decrement: createEgresoDto.monto } },
+      });
+
+      return egreso;
     });
-
-    await this.prisma.cajaDiaria.update({
-      where: { id: caja.id },
-      data: { montoEfectivoEsperado: { decrement: createEgresoDto.monto } },
-    });
-
-    return egreso;
   }
 
   findAll() {

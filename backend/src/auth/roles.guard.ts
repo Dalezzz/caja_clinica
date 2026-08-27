@@ -21,12 +21,6 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const req = context.switchToHttp().getRequest();
-
-    // Skip if auth is disabled in .env
-    if (process.env.DISABLE_AUTH === 'true') {
-      return true;
-    }
-
     const user = req.user;
     if (!user || !requiredRoles.includes(user.rol)) {
       throw new ForbiddenException(

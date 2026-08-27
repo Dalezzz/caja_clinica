@@ -7,7 +7,6 @@ import {
   XCircle,
   AlertCircle,
   Clock,
-  Info,
 } from "lucide-react";
 import api from "../api";
 

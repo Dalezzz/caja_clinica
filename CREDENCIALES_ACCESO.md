@@ -23,5 +23,13 @@ Este rol está limitado a las operaciones diarias (POS): generar tickets, ver la
 
 ---
 
+## 💊 Rol: Farmacia
+Este rol tiene acceso directo al inventario, productos farmacéuticos, consulta y registro de movimientos de Kardex e importación masiva de Excel.
+
+- **Usuario:** `farmacia`
+- **Contraseña:** `farmacia1234`
+
+---
+
 > **Nota para el Tester:** 
 > Dentro de la cuenta de Recepcionista, existe un botón llamado "Modo Administrador". Si se hace clic allí y se ingresa la contraseña de administrador (`admin1234`), se desbloquearán temporalmente funciones críticas (como anular comprobantes o aplicar descuentos no autorizados) sin necesidad de cerrar sesión.

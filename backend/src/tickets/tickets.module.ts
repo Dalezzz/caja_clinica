@@ -3,9 +3,10 @@ import { TicketsService } from './tickets.service';
 import { TicketsController } from './tickets.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SunatModule } from '../sunat/sunat.module';
+import { FarmaciaModule } from '../farmacia/farmacia.module';
 
 @Module({
-  imports: [PrismaModule, SunatModule],
+  imports: [PrismaModule, SunatModule, FarmaciaModule],
   controllers: [TicketsController],
   providers: [TicketsService],
 })

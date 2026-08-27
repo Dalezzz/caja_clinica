@@ -51,6 +51,7 @@ import { AlquileresPanel } from "./components/AlquileresPanel";
 import { ComprobantesPanel } from "./components/ComprobantesPanel";
 import { EstadisticasPanel } from "./components/EstadisticasPanel";
 import { ReportesPanel } from "./components/ReportesPanel";
+import FarmaciaPanel from "./components/FarmaciaPanel";
 import { Login } from "./components/Login";
 
 function App() {
@@ -81,7 +82,7 @@ function App() {
     id: number;
     nombre: string;
     usuario: string;
-    rol: "ADMINISTRADOR" | "RECEPCIONISTA";
+    rol: "ADMINISTRADOR" | "RECEPCIONISTA" | "FARMACIA";
   } | null>(() => {
     const saved = localStorage.getItem("currentUser");
     if (!saved) return null;
@@ -1048,6 +1049,9 @@ function App() {
       localStorage.setItem("keepMeLoggedIn", String(keepMeLoggedIn));
       localStorage.setItem("loginDate", new Date().toDateString());
       setCurrentUser(user);
+      if (user.rol === "FARMACIA") {
+        setActiveTab("farmacia");
+      }
     }} />;
   }
 
@@ -1649,6 +1653,11 @@ function App() {
           )}
 
           {activeTab === "reportes" && <ReportesPanel />}
+
+          {activeTab === "farmacia" &&
+            (currentUser?.rol === "FARMACIA" || currentUser?.rol === "ADMINISTRADOR") && (
+              <FarmaciaPanel />
+            )}
 
           {activeTab === "admin" && currentUser?.rol === "ADMINISTRADOR" && (
             <AdminPanel

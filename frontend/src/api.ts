@@ -663,6 +663,92 @@ const api = {
   descargarBoletaPdfUrl(ticketId: number): string {
     return `${API_BASE_URL}/sunat/descargar-pdf/${ticketId}`;
   },
+
+  // FARMACIA
+  async getProductos(busqueda?: string, categoria?: string): Promise<Producto[]> {
+    const params = new URLSearchParams();
+    if (busqueda) params.set("busqueda", busqueda);
+    if (categoria) params.set("categoria", categoria);
+    const qs = params.toString();
+    return this.get(`farmacia/productos${qs ? `?${qs}` : ""}`);
+  },
+
+  async getCategoriasFarmacia(): Promise<string[]> {
+    return this.get("farmacia/categorias");
+  },
+
+  async getProductoById(id: number): Promise<ProductoConKardex> {
+    return this.get(`farmacia/productos/${id}`);
+  },
+
+  async createProducto(data: Omit<Producto, "id" | "creadoEn" | "actualizadoEn" | "_count">): Promise<Producto> {
+    return this.post("farmacia/productos", data);
+  },
+
+  async updateProducto(id: number, data: Partial<Omit<Producto, "id">>): Promise<Producto> {
+    return this.patch(`farmacia/productos/${id}`, data);
+  },
+
+  async registrarMovimientoKardex(data: {
+    productoId: number;
+    tipo: "ENTRADA" | "SALIDA" | "AJUSTE";
+    cantidad: number;
+    motivo?: string;
+  }): Promise<MovimientoKardex> {
+    return this.post("farmacia/movimiento", data);
+  },
+
+  async importarExcelFarmacia(
+    archivo: File,
+    contexto: "clinica" | "farmacia" = "farmacia"
+  ): Promise<{ importados: number; productos: number; errores: string[] }> {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append("archivo", archivo);
+    const res = await fetch(
+      `${API_BASE_URL}/farmacia/importar?contexto=${contexto}`,
+      {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(err.message || "Error al importar el archivo");
+    }
+    return res.json();
+  },
 };
 
 export default api;
+
+// ── Farmacia Types ───────────────────────────────────────────
+export interface Producto {
+  id: number;
+  nombre: string;
+  detalle?: string;
+  categoria: string;
+  stockActual: number;
+  unidadMedida: string;
+  activo: boolean;
+  creadoEn: string;
+  actualizadoEn: string;
+  _count?: { movimientos: number };
+}
+
+export interface MovimientoKardex {
+  id: number;
+  productoId: number;
+  fecha: string;
+  tipo: "ENTRADA" | "SALIDA" | "AJUSTE";
+  cantidad: number;
+  saldoResultante: number;
+  motivo?: string;
+  ticketId?: number;
+  creadoEn: string;
+}
+
+export interface ProductoConKardex extends Producto {
+  movimientos: MovimientoKardex[];
+}

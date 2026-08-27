@@ -10,6 +10,13 @@ generator client {
 enum RolUsuario {
   ADMINISTRADOR
   RECEPCIONISTA
+  FARMACIA
+}
+
+enum TipoMovimientoKardex {
+  ENTRADA
+  SALIDA
+  AJUSTE
 }
 
 enum EstadoTicket {
@@ -235,6 +242,7 @@ model Ticket {
   @@index([fecha])
   @@index([medicoId])
   @@index([cajaDiariaId])
+  @@index([medicoId, fecha, estado])
   @@map("tickets")
 }
 
@@ -375,18 +383,62 @@ model Ajustes {
   @@map("ajustes")
 }
 
+// =========================================================
+// MÓDULO FARMACIA
+// =========================================================
+
+model Producto {
+  id            Int                    @id @default(autoincrement())
+  nombre        String
+  detalle       String?
+  categoria     String
+  stockActual   Decimal                @default(0) @db.Decimal(10, 3)
+  unidadMedida  String                 @default("UND") // UND, ML, MG, CAJA, etc.
+  activo        Boolean                @default(true)
+  creadoEn      DateTime               @default(now())
+  actualizadoEn DateTime               @updatedAt
+  movimientos   MovimientoKardex[]
+  ticketItems   TicketItem[]
+
+  @@index([nombre])
+  @@index([categoria])
+  @@map("productos")
+}
+
+model MovimientoKardex {
+  id              Int                    @id @default(autoincrement())
+  productoId      Int
+  producto        Producto               @relation(fields: [productoId], references: [id])
+  fecha           DateTime               @default(now())
+  tipo            TipoMovimientoKardex
+  cantidad        Decimal                @db.Decimal(10, 3)
+  saldoResultante Decimal                @db.Decimal(10, 3)
+  motivo          String?
+  ticketId        Int?                   // Referencia si el movimiento viene de un ticket
+  creadoEn        DateTime               @default(now())
+
+  @@index([productoId])
+  @@index([fecha])
+  @@index([productoId, fecha])
+  @@map("movimientos_kardex")
+}
+
 model TicketItem {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   ticketId        Int
-  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket          Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   tarifaId        Int
-  tarifa          Tarifa   @relation(fields: [tarifaId], references: [id])
+  tarifa          Tarifa    @relation(fields: [tarifaId], references: [id])
   descripcion     String
-  cantidad        Int      @default(1)
-  precioUnitario  Decimal  @db.Decimal(10, 2)
-  comisionMedico  Decimal  @db.Decimal(10, 2)
-  comisionClinica Decimal  @db.Decimal(10, 2)
-  comisionTecnico Decimal  @db.Decimal(10, 2)
+  cantidad        Int       @default(1)
+  precioUnitario  Decimal   @db.Decimal(10, 2)
+  comisionMedico  Decimal   @db.Decimal(10, 2)
+  comisionClinica Decimal   @db.Decimal(10, 2)
+  comisionTecnico Decimal   @db.Decimal(10, 2)
+  // Fase 4: insumo de farmacia asociado (opcional)
+  productoId      Int?
+  producto        Producto? @relation(fields: [productoId], references: [id])
+  cantidadInsumo  Decimal?  @db.Decimal(10, 3) // Cantidad de insumo a descontar del stock
   
   @@index([ticketId])
   @@index([tarifaId])

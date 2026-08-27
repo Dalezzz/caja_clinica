@@ -13,6 +13,15 @@ export class TicketItemDto {
   @IsOptional()
   @IsNumber()
   cantidad?: number;
+
+  // Fase 4: insumo de farmacia a descontar del stock
+  @IsOptional()
+  @IsNumber()
+  productoId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  cantidadInsumo?: number;
 }
 
 export class CreateTicketDto {

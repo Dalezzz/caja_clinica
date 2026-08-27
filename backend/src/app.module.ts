@@ -23,6 +23,7 @@ import { ComprobantePagoMedicoModule } from './comprobante-pago-medico/comproban
 import { ReportesModule } from './reportes/reportes.module';
 import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
 import { SunatModule } from './sunat/sunat.module';
+import { FarmaciaModule } from './farmacia/farmacia.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
@@ -50,21 +51,23 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
     ReportesModule,
     PdfGeneratorModule,
     SunatModule,
+    FarmaciaModule,
   ],
   controllers: [AppController],
-  providers: (() => {
-    const providers: any[] = [
-      AppService,
-      {
-        provide: APP_GUARD,
-        useClass: ThrottlerGuard,
-      },
-    ];
-    if (process.env.DISABLE_AUTH !== 'true') {
-      providers.push({ provide: APP_GUARD, useClass: JwtAuthGuard });
-      providers.push({ provide: APP_GUARD, useClass: RolesGuard });
-    }
-    return providers;
-  })(),
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}

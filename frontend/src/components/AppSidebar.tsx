@@ -7,6 +7,7 @@ import {
   Layers,
   Lock,
   MessageCircle,
+  Pill,
   Receipt,
   Settings,
   Stethoscope,
@@ -20,7 +21,7 @@ interface AppSidebarProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   ticketCount: number;
-  userRole: "ADMINISTRADOR" | "RECEPCIONISTA";
+  userRole: "ADMINISTRADOR" | "RECEPCIONISTA" | "FARMACIA";
   userName: string;
   onTriggerAdminMode: () => void;
   onLogout: () => void;
@@ -107,24 +108,37 @@ export function AppSidebar({
       icon: Settings,
       group: "admin",
     },
+    {
+      id: "farmacia",
+      label: "Farmacia & Kardex",
+      icon: Pill,
+      group: "farmacia",
+    },
   ];
 
   const groups = [
     { key: "core", label: "Operaciones" },
     { key: "avanzada", label: "Gestión Avanzada" },
     { key: "admin", label: "Administración" },
+    { key: "farmacia", label: "Farmacia" },
   ];
 
   const visibleTabs = tabs.filter((tab) => {
-    if (userRole === "RECEPCIONISTA" && tab.group === "admin") {
-      return false; // Ocultar pestañas de administración para recepcionistas
+    if (userRole === "RECEPCIONISTA" && (tab.group === "admin" || tab.group === "farmacia")) {
+      return false;
+    }
+    if (userRole === "FARMACIA" && tab.group !== "farmacia") {
+      return false; // El rol FARMACIA solo ve el módulo de farmacia
     }
     return true;
   });
 
   const visibleGroups = groups.filter((group) => {
-    if (userRole === "RECEPCIONISTA" && group.key === "admin") {
-      return false; // Ocultar sección de administración para recepcionistas
+    if (userRole === "RECEPCIONISTA" && (group.key === "admin" || group.key === "farmacia")) {
+      return false;
+    }
+    if (userRole === "FARMACIA" && group.key !== "farmacia") {
+      return false;
     }
     return true;
   });
@@ -218,10 +232,12 @@ export function AppSidebar({
               className={`text-[9px] font-medium max-w-max px-1.5 py-0.5 rounded mt-0.5 uppercase tracking-wider ${
                 userRole === "ADMINISTRADOR"
                   ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  : userRole === "FARMACIA"
+                  ? "bg-purple-100 text-purple-800 border border-purple-200"
                   : "bg-sky-100 text-sky-800 border border-sky-200"
               }`}
             >
-              {userRole === "ADMINISTRADOR" ? "Administrador" : "Recepcionista"}
+              {userRole === "ADMINISTRADOR" ? "Administrador" : userRole === "FARMACIA" ? "Farmacia" : "Recepcionista"}
             </span>
           </div>
         </div>

@@ -7,7 +7,7 @@ interface LoginProps {
     id: number;
     nombre: string;
     usuario: string;
-    rol: "ADMINISTRADOR" | "RECEPCIONISTA";
+    rol: "ADMINISTRADOR" | "RECEPCIONISTA" | "FARMACIA";
   }, keepMeLoggedIn: boolean) => void;
 }
 

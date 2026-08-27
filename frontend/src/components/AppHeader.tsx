@@ -28,6 +28,7 @@ export function AppHeader({
     comprobantes: "Comprobantes de Pago Médico",
     estadisticas: "Estadísticas de Médicos",
     reportes: "Reportes por WhatsApp",
+    farmacia: "Farmacia & Kardex",
   };
 
   return (

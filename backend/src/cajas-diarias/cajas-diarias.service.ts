@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCajasDiariaDto } from './dto/create-cajas-diaria.dto';
 import { UpdateCajasDiariaDto } from './dto/update-cajas-diaria.dto';
@@ -8,14 +8,21 @@ export class CajasDiariasService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCajasDiariaDto: CreateCajasDiariaDto) {
+    const cajaAbierta = await this.prisma.cajaDiaria.findFirst({
+      where: { abierta: true },
+    });
+
+    if (cajaAbierta) {
+      throw new BadRequestException(
+        'Ya existe una caja diaria abierta. Debe realizar el arqueo y cierre antes de aperturar una nueva caja.',
+      );
+    }
+
     let usuarioAperturaId = (createCajasDiariaDto as any).usuarioAperturaId as
       number | undefined;
 
     if (!usuarioAperturaId) {
-      const admin = await this.prisma.usuario.findFirst({
-        orderBy: { id: 'asc' },
-      });
-      usuarioAperturaId = admin?.id || 1;
+      usuarioAperturaId = 1;
     }
 
     return this.prisma.cajaDiaria.create({
