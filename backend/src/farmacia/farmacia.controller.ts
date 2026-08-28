@@ -74,7 +74,7 @@ export class FarmaciaController {
   @Post('importar')
   @UseInterceptors(FileInterceptor('archivo'))
   async importarExcel(
-    @UploadedFile() archivo: Express.Multer.File,
+    @UploadedFile() archivo: any,
     @Query('contexto') contexto: 'clinica' | 'farmacia' = 'farmacia',
   ) {
     if (!archivo) {
