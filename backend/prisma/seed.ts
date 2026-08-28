@@ -1,4 +1,4 @@
-import { PrismaClient, RolUsuario, MetodoPago, EstadoTicket, TipoEgreso } from '@prisma/client';
+import { PrismaClient, RolUsuario, MetodoPago, EstadoTicket, TipoEgreso, TipoMovimientoKardex } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const EstadoAlquiler = {
@@ -398,6 +398,265 @@ async function main() {
     },
   });
   console.log('✅ Ajustes de configuración inicializados');
+
+  // 10. Módulo de Farmacia & Movimientos de Kardex
+  const productosFarmaciaData: Array<{
+    nombre: string;
+    detalle: string;
+    categoria: string;
+    unidadMedida: string;
+    stockActual: number;
+    movimientos: Array<{
+      tipo: TipoMovimientoKardex;
+      cantidad: number;
+      diasAtras: number;
+      motivo: string;
+    }>;
+  }> = [
+    {
+      nombre: 'Paracetamol 500mg',
+      detalle: 'Caja x 100 tabletas recubiertas',
+      categoria: 'ANALGÉSICOS Y ANTIINFLAMATORIOS',
+      unidadMedida: 'UND',
+      stockActual: 120,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 200, diasAtras: 15, motivo: 'Compra Proveedor Droguería Alfa - Factura F001-4421' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 50, diasAtras: 10, motivo: 'Dispensación Turno Mañana POS' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 30, diasAtras: 3, motivo: 'Receta Médica - Paciente Juan Mendoza' },
+      ],
+    },
+    {
+      nombre: 'Ibuprofeno 400mg',
+      detalle: 'Blister x 10 cápsulas blandas',
+      categoria: 'ANALGÉSICOS Y ANTIINFLAMATORIOS',
+      unidadMedida: 'UND',
+      stockActual: 85,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 100, diasAtras: 18, motivo: 'Lote Inicial de Inventario' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 15, diasAtras: 8, motivo: 'Atención Consultorio Traumatología' },
+      ],
+    },
+    {
+      nombre: 'Amoxicilina + Ácido Clavulánico 500/125mg',
+      detalle: 'Caja x 14 tabletas',
+      categoria: 'ANTIBIÓTICOS',
+      unidadMedida: 'UND',
+      stockActual: 45,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 60, diasAtras: 14, motivo: 'Ingreso por compra mayorista' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 15, diasAtras: 5, motivo: 'Tratamiento Odontológico' },
+      ],
+    },
+    {
+      nombre: 'Azitromicina 500mg',
+      detalle: 'Caja x 3 tabletas',
+      categoria: 'ANTIBIÓTICOS',
+      unidadMedida: 'UND',
+      stockActual: 8,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 20, diasAtras: 20, motivo: 'Inventario Apertura' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 12, diasAtras: 2, motivo: 'Dispensación campaña respiratoria' },
+      ],
+    },
+    {
+      nombre: 'Ceftriaxona 1g Inyectable',
+      detalle: 'Frasco ampolla + diluyente 5ml',
+      categoria: 'ANTIBIÓTICOS',
+      unidadMedida: 'AMPOLLA',
+      stockActual: 4,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 10, diasAtras: 12, motivo: 'Reposición de emergencia' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 6, diasAtras: 4, motivo: 'Procedimiento de emergencia clínica' },
+      ],
+    },
+    {
+      nombre: 'Omeprazol 20mg',
+      detalle: 'Frasco x 30 cápsulas con microgránulos',
+      categoria: 'GASTROENTEROLOGÍA',
+      unidadMedida: 'UND',
+      stockActual: 150,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 180, diasAtras: 16, motivo: 'Factura F002-8812 Lab Farmacéutico' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 30, diasAtras: 6, motivo: 'Venta Directa Farmacia' },
+      ],
+    },
+    {
+      nombre: 'Dimenhidrinato 50mg/5ml',
+      detalle: 'Ampolla inyectable 5ml',
+      categoria: 'GASTROENTEROLOGÍA',
+      unidadMedida: 'AMPOLLA',
+      stockActual: 6,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 15, diasAtras: 10, motivo: 'Compra farmacia central' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 9, diasAtras: 1, motivo: 'Aplicación en tópico de urgencias' },
+      ],
+    },
+    {
+      nombre: 'Clorfenamina 4mg',
+      detalle: 'Caja x 100 tabletas',
+      categoria: 'RESPIRATORIO Y ALERGIAS',
+      unidadMedida: 'UND',
+      stockActual: 60,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 80, diasAtras: 15, motivo: 'Stock mensual' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 20, diasAtras: 7, motivo: 'Dispensación ambulatoria' },
+      ],
+    },
+    {
+      nombre: 'Dexametasona 4mg/2ml',
+      detalle: 'Ampolla inyectable 2ml',
+      categoria: 'SOLUCIONES E INYECTABLES',
+      unidadMedida: 'AMPOLLA',
+      stockActual: 18,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 30, diasAtras: 11, motivo: 'Ingreso lote D-2026' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 12, diasAtras: 2, motivo: 'Tratamiento antialérgico tópico' },
+      ],
+    },
+    {
+      nombre: 'Cloruro de Sodio 0.9% 1000ml',
+      detalle: 'Frasco plástico para infusión IV',
+      categoria: 'SOLUCIONES E INYECTABLES',
+      unidadMedida: 'FRASCO',
+      stockActual: 30,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 40, diasAtras: 14, motivo: 'Factura Distribuidora Médica' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 10, diasAtras: 3, motivo: 'Hidratación endovenosa pacientes' },
+      ],
+    },
+    {
+      nombre: 'Jeringa Descartable 5ml c/aguja 21G',
+      detalle: 'Empaque estéril individual',
+      categoria: 'MATERIAL MÉDICO Y DESCARTABLES',
+      unidadMedida: 'UND',
+      stockActual: 200,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 250, diasAtras: 20, motivo: 'Compra caja x 250 unidades' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 50, diasAtras: 5, motivo: 'Uso en tópico y laboratorio' },
+      ],
+    },
+    {
+      nombre: 'Guantes Quirúrgicos N° 7.5',
+      detalle: 'Par estéril látex libre de polvo',
+      categoria: 'MATERIAL MÉDICO Y DESCARTABLES',
+      unidadMedida: 'PAR',
+      stockActual: 75,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 100, diasAtras: 16, motivo: 'Lote QX-2026' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 25, diasAtras: 4, motivo: 'Cirugías menores y curaciones' },
+      ],
+    },
+    {
+      nombre: 'Catéter Endovenoso N° 20 (Abocath)',
+      detalle: 'Teflón radiopaco estéril',
+      categoria: 'MATERIAL MÉDICO Y DESCARTABLES',
+      unidadMedida: 'UND',
+      stockActual: 0,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 30, diasAtras: 22, motivo: 'Stock inicial' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 30, diasAtras: 1, motivo: 'Consumo total en atenciones tópicas' },
+      ],
+    },
+    {
+      nombre: 'Gasas Estériles 10x10cm',
+      detalle: 'Sobre x 5 unidades',
+      categoria: 'MATERIAL MÉDICO Y DESCARTABLES',
+      unidadMedida: 'SOBRE',
+      stockActual: 0,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 50, diasAtras: 25, motivo: 'Compra inicial de gasas' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 50, diasAtras: 2, motivo: 'Agotado en procedimientos de curación' },
+      ],
+    },
+    {
+      nombre: 'Esparadrapo Hipoalergénico 2"',
+      detalle: 'Rollo microporoso 5 yardas',
+      categoria: 'MATERIAL MÉDICO Y DESCARTABLES',
+      unidadMedida: 'UND',
+      stockActual: 6,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 12, diasAtras: 15, motivo: 'Caja x 12 rollos' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 6, diasAtras: 4, motivo: 'Distribución en consultorios' },
+      ],
+    },
+    {
+      nombre: 'Alcohol Medicinal 70° 1000ml',
+      detalle: 'Frasco con precinto de seguridad',
+      categoria: 'MATERIAL MÉDICO Y DESCARTABLES',
+      unidadMedida: 'FRASCO',
+      stockActual: 12,
+      movimientos: [
+        { tipo: TipoMovimientoKardex.ENTRADA, cantidad: 20, diasAtras: 18, motivo: 'Compra institucional de bioseguridad' },
+        { tipo: TipoMovimientoKardex.SALIDA, cantidad: 8, diasAtras: 5, motivo: 'Desinfección de áreas clínicas' },
+      ],
+    },
+  ];
+
+  for (const prodData of productosFarmaciaData) {
+    const movimientos = prodData.movimientos;
+
+    let producto = await prisma.producto.findFirst({
+      where: { nombre: prodData.nombre },
+    });
+
+    if (!producto) {
+      producto = await prisma.producto.create({
+        data: {
+          nombre: prodData.nombre,
+          detalle: prodData.detalle,
+          categoria: prodData.categoria,
+          unidadMedida: prodData.unidadMedida,
+          stockActual: prodData.stockActual,
+          activo: true,
+        },
+      });
+    } else {
+      producto = await prisma.producto.update({
+        where: { id: producto.id },
+        data: {
+          detalle: prodData.detalle,
+          categoria: prodData.categoria,
+          unidadMedida: prodData.unidadMedida,
+          stockActual: prodData.stockActual,
+          activo: true,
+        },
+      });
+    }
+
+    // Verificar si ya tiene movimientos para no duplicar en re-seeds
+    const existingMovsCount = await prisma.movimientoKardex.count({
+      where: { productoId: producto.id },
+    });
+
+    if (existingMovsCount === 0) {
+      let saldoAcumulado = 0;
+      for (const mov of movimientos) {
+        const fechaMov = new Date(fechaActual);
+        fechaMov.setDate(fechaActual.getDate() - mov.diasAtras);
+
+        if (mov.tipo === TipoMovimientoKardex.ENTRADA) {
+          saldoAcumulado += mov.cantidad;
+        } else if (mov.tipo === TipoMovimientoKardex.SALIDA) {
+          saldoAcumulado = Math.max(0, saldoAcumulado - mov.cantidad);
+        } else {
+          saldoAcumulado = mov.cantidad;
+        }
+
+        await prisma.movimientoKardex.create({
+          data: {
+            productoId: producto.id,
+            fecha: fechaMov,
+            tipo: mov.tipo,
+            cantidad: mov.cantidad,
+            saldoResultante: saldoAcumulado,
+            motivo: mov.motivo,
+          },
+        });
+      }
+    }
+  }
+
+  console.log(`✅ ${productosFarmaciaData.length} Productos farmacéuticos y sus movimientos de Kardex registrados`);
 
   console.log('🎉 SEED COMPLETADO AL 100%! La base de datos está cargada con abundante información real.');
 }
