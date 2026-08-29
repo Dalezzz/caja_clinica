@@ -161,6 +161,7 @@ export interface AlquilerEspacio {
 
 export interface ComprobantePagoMedico {
   id: number;
+  correlativoMedico?: number;
   medicoId: number;
   medico?: Medico;
   fecha: string;

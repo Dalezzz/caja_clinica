@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Upload } from "lucide-react";
+import { FileSpreadsheet, Upload, AlertTriangle } from "lucide-react";
 
 interface ImporterPanelProps {
   excelFile: File | null;
@@ -69,12 +69,53 @@ export function ImporterPanel({
 
       {dryRunData && (
         <div className="bg-zinc-50/50 p-5 rounded-lg border border-zinc-200 space-y-4 animate-in fade-in">
+          {dryRunData.archivoDuplicado && (
+            <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3 shadow-sm text-amber-900">
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 text-xs">
+                <div className="font-bold text-amber-950 text-sm flex items-center gap-2">
+                  ⚠️ ARCHIVO PREVIAMENTE IMPORTADO DETECTADO
+                </div>
+                <p className="text-amber-900 leading-relaxed">
+                  Este archivo Excel (
+                  <strong>
+                    {dryRunData.archivoMetadata?.nombreArchivo || excelFile?.name}
+                  </strong>
+                  ) ya fue cargado e importado previamente en el sistema el{" "}
+                  <strong>
+                    {new Date(
+                      dryRunData.archivoMetadata?.fechaCarga,
+                    ).toLocaleDateString("es-PE")}{" "}
+                    a las{" "}
+                    {new Date(
+                      dryRunData.archivoMetadata?.fechaCarga,
+                    ).toLocaleTimeString("es-PE")}
+                  </strong>
+                  .
+                </p>
+                <p className="text-amber-800 font-semibold bg-amber-100/70 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-1">
+                  🔒 Sistema de Protección Activo: Si confirmas la inserción,
+                  los registros y tickets ya existentes SERÁN OMITIDOS
+                  automáticamente para no duplicar montos ni atenciones.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
             <span className="text-xs font-semibold text-zinc-900">
               Resultado Dry-Run ({dryRunData.mesIdentificado})
             </span>
-            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium px-2 py-0.5 rounded-md">
-              Analizado Correctamente
+            <span
+              className={`text-[10px] font-medium px-2 py-0.5 rounded-md border ${
+                dryRunData.archivoDuplicado
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              }`}
+            >
+              {dryRunData.archivoDuplicado
+                ? "Previamente Importado"
+                : "Analizado Correctamente"}
             </span>
           </div>
 

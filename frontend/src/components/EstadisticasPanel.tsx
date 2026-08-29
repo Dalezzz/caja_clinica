@@ -111,8 +111,8 @@ export function EstadisticasPanel({ medicos }: EstadisticasPanelProps) {
   const maxAnual =
     comparativaAnual.length > 0
       ? Math.max(
-          ...comparativaAnual.map((d: any) => Number(d.montoPaciente || 0)),
-        )
+        ...comparativaAnual.map((d: any) => Number(d.montoPaciente || 0)),
+      )
       : 1;
 
   const totalMes = estadisticas.reduce(
@@ -219,15 +219,14 @@ export function EstadisticasPanel({ medicos }: EstadisticasPanelProps) {
               {ranking.map((r) => (
                 <div
                   key={r.medicoId}
-                  className={`flex items-center gap-3 px-5 py-3 transition hover:bg-zinc-50 border-l-2 ${
-                    r.puesto === 1
+                  className={`flex items-center gap-3 px-5 py-3 transition hover:bg-zinc-50 border-l-2 ${r.puesto === 1
                       ? "border-amber-400"
                       : r.puesto === 2
                         ? "border-zinc-400"
                         : r.puesto === 3
                           ? "border-orange-400"
                           : "border-transparent"
-                  }`}
+                    }`}
                 >
                   <div
                     className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center text-sm font-bold shrink-0 ${medalColor(r.puesto)}`}
@@ -353,11 +352,10 @@ export function EstadisticasPanel({ medicos }: EstadisticasPanelProps) {
           <div className="flex items-center gap-2">
             {crecimiento && (
               <div
-                className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                  crecimiento.crecimiento >= 0
+                className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${crecimiento.crecimiento >= 0
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : "bg-red-50 text-red-600 border-red-200"
-                }`}
+                  }`}
               >
                 {crecimiento.crecimiento >= 0 ? (
                   <TrendingUp className="h-3 w-3" />
@@ -528,13 +526,11 @@ export function EstadisticasPanel({ medicos }: EstadisticasPanelProps) {
 
                         {/* Contenedor de la Barra con sombreado y animación */}
                         <div
-                          className={`w-full max-w-[32px] rounded-t-md transition-all duration-300 relative flex flex-col justify-end overflow-hidden ${
-                            esMesActual
+                          className={`w-full max-w-[32px] rounded-t-md transition-all duration-300 relative flex flex-col justify-end overflow-hidden ${esMesActual
                               ? "ring-2 ring-zinc-950 ring-offset-1 shadow-md"
                               : "hover:opacity-90"
-                          } ${
-                            tieneDatos ? "bg-zinc-800 shadow-sm" : "bg-zinc-100"
-                          }`}
+                            } ${tieneDatos ? "bg-zinc-800 shadow-sm" : "bg-zinc-100"
+                            }`}
                           style={{
                             height: `${Math.max(pctTotal, tieneDatos ? 8 : 2)}%`,
                             minHeight: tieneDatos ? "14px" : "4px",
@@ -566,11 +562,10 @@ export function EstadisticasPanel({ medicos }: EstadisticasPanelProps) {
                   {MESES.map((m, i) => (
                     <div
                       key={i}
-                      className={`flex-1 text-center text-[10px] font-semibold transition-colors ${
-                        i + 1 === mes
+                      className={`flex-1 text-center text-[10px] font-semibold transition-colors ${i + 1 === mes
                           ? "text-zinc-950 font-bold underline underline-offset-4 decoration-2"
                           : "text-zinc-500 hover:text-zinc-800"
-                      }`}
+                        }`}
                     >
                       {m.slice(0, 3)}
                     </div>

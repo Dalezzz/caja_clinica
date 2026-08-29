@@ -29,7 +29,7 @@ export class ComprobantePagoMedicoService {
       });
       creadorId = admin?.id || 1;
     }
-    // Validar que exista el médico
+
     const medico = await this.prisma.medico.findUnique({
       where: { id: createComprobantePagoMedicoDto.medicoId },
     });
@@ -38,7 +38,6 @@ export class ComprobantePagoMedicoService {
       throw new NotFoundException('Médico no encontrado');
     }
 
-    // Obtener caja abierta
     const caja = await this.prisma.cajaDiaria.findFirst({
       where: { abierta: true },
       orderBy: { fecha: 'desc' },
@@ -48,8 +47,18 @@ export class ComprobantePagoMedicoService {
       throw new NotFoundException('No hay caja diaria abierta');
     }
 
-    // Obtener servicios del médico en el período
-    const tickets = await this.prisma.ticket.findMany({
+    // 1. Verificar si ya existe un comprobante en BORRADOR para este médico
+    const borradorExistente =
+      await this.prisma.comprobantePagoMedico.findFirst({
+        where: {
+          medicoId: createComprobantePagoMedicoDto.medicoId,
+          estado: 'BORRADOR',
+        },
+        orderBy: { fecha: 'desc' },
+      });
+
+    // 2. Buscar tickets pendientes de liquidación (comprobantePagoMedicoId === null)
+    const ticketsNuevos = await this.prisma.ticket.findMany({
       where: {
         medicoId: createComprobantePagoMedicoDto.medicoId,
         fecha: {
@@ -57,31 +66,81 @@ export class ComprobantePagoMedicoService {
           lte: new Date(createComprobantePagoMedicoDto.periodoFin),
         },
         estado: 'ACTIVO',
+        comprobantePagoMedicoId: null,
       },
       include: {
         tarifa: true,
       },
     });
 
-    // Calcular montoTotal seguro basado en los tickets obtenidos de la BD
-    const montoTotalCalculado = tickets.reduce(
+    // Caso A: Ya existe borrador
+    if (borradorExistente) {
+      if (ticketsNuevos.length > 0) {
+        // Anexar los nuevos tickets al borrador existente
+        await this.prisma.ticket.updateMany({
+          where: { id: { in: ticketsNuevos.map((t) => t.id) } },
+          data: { comprobantePagoMedicoId: borradorExistente.id },
+        });
+
+        // Recalcular montos del borrador existente
+        const todosTickets = await this.prisma.ticket.findMany({
+          where: {
+            comprobantePagoMedicoId: borradorExistente.id,
+            estado: 'ACTIVO',
+          },
+        });
+
+        const totalCalculado = todosTickets.reduce(
+          (acc, t) => acc + Number(t.montoMedico),
+          0,
+        );
+        const descuento = Number(borradorExistente.montoDescuento || 0);
+
+        await this.prisma.comprobantePagoMedico.update({
+          where: { id: borradorExistente.id },
+          data: {
+            montoTotal: new Decimal(totalCalculado),
+            montoNeto: new Decimal(totalCalculado - descuento),
+            cantidadServicios: todosTickets.length,
+          },
+        });
+      }
+      return this.findOne(borradorExistente.id);
+    }
+
+    // Caso B: No existe borrador y tampoco hay tickets pendientes
+    if (ticketsNuevos.length === 0) {
+      throw new BadRequestException(
+        'No hay atenciones o servicios pendientes de pago para este médico hoy.',
+      );
+    }
+
+    // Caso C: No existe borrador y SI hay tickets pendientes -> Crear nuevo comprobante
+    const ultimoComprobante =
+      await this.prisma.comprobantePagoMedico.findFirst({
+        where: { medicoId: createComprobantePagoMedicoDto.medicoId },
+        orderBy: { correlativoMedico: 'desc' },
+      });
+    const correlativoMedico = (ultimoComprobante?.correlativoMedico || 0) + 1;
+
+    const montoTotalCalculado = ticketsNuevos.reduce(
       (acc, t) => acc + Number(t.montoMedico),
       0,
     );
 
-    // Crear comprobante
     const montoDescuento = createComprobantePagoMedicoDto.montoDescuento || 0;
     const montoNeto = montoTotalCalculado - montoDescuento;
 
     const comprobante = await this.prisma.comprobantePagoMedico.create({
       data: {
         medicoId: createComprobantePagoMedicoDto.medicoId,
+        correlativoMedico,
         periodoInicio: new Date(createComprobantePagoMedicoDto.periodoInicio),
         periodoFin: new Date(createComprobantePagoMedicoDto.periodoFin),
         montoTotal: new Decimal(montoTotalCalculado),
         montoDescuento: new Decimal(montoDescuento),
         montoNeto: new Decimal(montoNeto),
-        cantidadServicios: tickets.length,
+        cantidadServicios: ticketsNuevos.length,
         estado: 'BORRADOR',
         cajaDiariaId: caja.id,
         usuarioCreadorId: creadorId,
@@ -94,17 +153,13 @@ export class ComprobantePagoMedicoService {
       },
     });
 
-    return {
-      ...comprobante,
-      tickets: tickets.map((t) => ({
-        id: t.id,
-        numeroTicket: t.numeroTicket,
-        paciente: t.descripcionAdicional,
-        tarifa: t.tarifa.descripcion,
-        monto: Number(t.montoPaciente),
-        comisionMedico: Number(t.montoMedico),
-      })),
-    };
+    // Vincular los tickets con el nuevo comprobante
+    await this.prisma.ticket.updateMany({
+      where: { id: { in: ticketsNuevos.map((t) => t.id) } },
+      data: { comprobantePagoMedicoId: comprobante.id },
+    });
+
+    return this.findOne(comprobante.id);
   }
 
   async findOne(id: number) {
@@ -121,29 +176,32 @@ export class ComprobantePagoMedicoService {
       throw new NotFoundException('Comprobante no encontrado');
     }
 
-    // Obtener tickets asociados
-    const tickets = await this.prisma.ticket.findMany({
-      where: {
-        medicoId: comprobante.medicoId,
-        fecha: {
-          gte: comprobante.periodoInicio,
-          lte: comprobante.periodoFin,
-        },
-        estado: 'ACTIVO',
-      },
-      include: {
-        tarifa: true,
-        paciente: true,
-      },
+    let tickets = await this.prisma.ticket.findMany({
+      where: { comprobantePagoMedicoId: comprobante.id },
+      include: { tarifa: true, paciente: true },
     });
+
+    if (tickets.length === 0) {
+      tickets = await this.prisma.ticket.findMany({
+        where: {
+          medicoId: comprobante.medicoId,
+          fecha: {
+            gte: comprobante.periodoInicio,
+            lte: comprobante.periodoFin,
+          },
+          estado: 'ACTIVO',
+        },
+        include: { tarifa: true, paciente: true },
+      });
+    }
 
     return {
       ...comprobante,
       tickets: tickets.map((t) => ({
         id: t.id,
         numeroTicket: t.numeroTicket,
-        paciente: t.paciente.nombre,
-        tarifa: t.tarifa.descripcion,
+        paciente: t.paciente?.nombre || t.descripcionAdicional || 'Paciente',
+        tarifa: t.tarifa?.descripcion || 'Servicio',
         monto: Number(t.montoPaciente),
         comisionMedico: Number(t.montoMedico),
       })),
@@ -175,7 +233,7 @@ export class ComprobantePagoMedicoService {
         medico: true,
         usuarioCreador: { select: { id: true, nombre: true } },
       },
-      orderBy: { fecha: 'desc' },
+      orderBy: { correlativoMedico: 'desc' },
     });
   }
 
@@ -189,7 +247,7 @@ export class ComprobantePagoMedicoService {
         medico: true,
         usuarioCreador: { select: { id: true, nombre: true } },
       },
-      orderBy: { fecha: 'desc' },
+      orderBy: { correlativoMedico: 'desc' },
     });
   }
 
@@ -200,28 +258,30 @@ export class ComprobantePagoMedicoService {
     const comprobante = await this.findOne(id);
 
     if (comprobante.estado === 'FIRMADO') {
-      throw new Error('El comprobante ya ha sido firmado');
+      throw new BadRequestException('El comprobante ya ha sido firmado');
     }
 
-    // Obtener tickets para incluir en PDF
-    const tickets = await this.prisma.ticket.findMany({
-      where: {
-        medicoId: comprobante.medicoId,
-        fecha: {
-          gte: comprobante.periodoInicio,
-          lte: comprobante.periodoFin,
-        },
-        estado: 'ACTIVO',
-      },
-      include: {
-        tarifa: true,
-        paciente: true,
-      },
+    let tickets = await this.prisma.ticket.findMany({
+      where: { comprobantePagoMedicoId: comprobante.id },
+      include: { tarifa: true, paciente: true },
     });
 
-    // Generar PDF con firma digital
+    if (tickets.length === 0) {
+      tickets = await this.prisma.ticket.findMany({
+        where: {
+          medicoId: comprobante.medicoId,
+          fecha: {
+            gte: comprobante.periodoInicio,
+            lte: comprobante.periodoFin,
+          },
+          estado: 'ACTIVO',
+        },
+        include: { tarifa: true, paciente: true },
+      });
+    }
+
     const pdfPath = await this.pdfGeneratorService.generarComprobantePDF({
-      numeroComprobante: id,
+      numeroComprobante: comprobante.correlativoMedico || comprobante.id,
       medicoNombre: comprobante.medico.nombre,
       medicoEspecialidad: comprobante.medico.especialidad,
       periodoInicio: comprobante.periodoInicio.toISOString(),
@@ -235,19 +295,17 @@ export class ComprobantePagoMedicoService {
       clinicaNombre: 'Caja Clínica',
       tickets: tickets.map((t) => ({
         numeroTicket: t.numeroTicket,
-        paciente: t.paciente.nombre,
-        tarifa: t.tarifa.descripcion,
+        paciente: t.paciente?.nombre || t.descripcionAdicional || 'Paciente',
+        tarifa: t.tarifa?.descripcion || 'Servicio',
         monto: Number(t.montoPaciente),
         comisionMedico: Number(t.montoMedico),
       })),
     });
 
-    // Extraer nombre del archivo del path
     const pdfFilename = pdfPath.includes('\\')
       ? pdfPath.split('\\').pop()
       : pdfPath.split('/').pop();
 
-    // Actualizar comprobante con ruta del PDF
     return this.prisma.comprobantePagoMedico.update({
       where: { id },
       data: {
@@ -266,8 +324,14 @@ export class ComprobantePagoMedicoService {
     const comprobante = await this.findOne(id);
 
     if (comprobante.estado === 'CANCELADO') {
-      throw new Error('El comprobante ya ha sido cancelado');
+      throw new BadRequestException('El comprobante ya ha sido cancelado');
     }
+
+    // Liberar los tickets vinculados a este comprobante
+    await this.prisma.ticket.updateMany({
+      where: { comprobantePagoMedicoId: id },
+      data: { comprobantePagoMedicoId: null },
+    });
 
     return this.prisma.comprobantePagoMedico.update({
       where: { id },
@@ -293,30 +357,18 @@ export class ComprobantePagoMedicoService {
       hoy.getFullYear(),
       hoy.getMonth(),
       hoy.getDate(),
+      0,
+      0,
+      0,
     );
     const finHoy = new Date(
       hoy.getFullYear(),
       hoy.getMonth(),
-      hoy.getDate() + 1,
+      hoy.getDate(),
+      23,
+      59,
+      59,
     );
-
-    // Buscar tickets del médico del día
-    const tickets = await this.prisma.ticket.findMany({
-      where: {
-        medicoId,
-        fecha: {
-          gte: inicioHoy,
-          lt: finHoy,
-        },
-        estado: 'ACTIVO',
-      },
-    });
-
-    if (tickets.length === 0) {
-      throw new BadRequestException(
-        'No hay servicios o atenciones registradas para este médico el día de hoy',
-      );
-    }
 
     return this.generarComprobante(
       {

@@ -266,9 +266,37 @@ export class TicketsService {
   }
 
   async remove(id: number) {
-    return this.prisma.ticket.update({
-      where: { id },
-      data: { estado: 'ANULADO' },
+    return this.prisma.$transaction(async (tx) => {
+      const ticket = await tx.ticket.findUnique({ where: { id } });
+      if (!ticket) throw new NotFoundException('Ticket no encontrado');
+      if (ticket.estado === 'ANULADO') return ticket;
+
+      const ticketActualizado = await tx.ticket.update({
+        where: { id },
+        data: { estado: 'ANULADO' },
+      });
+
+      if (ticket.metodoPago === 'EFECTIVO') {
+        await tx.cajaDiaria.update({
+          where: { id: ticket.cajaDiariaId },
+          data: {
+            montoEfectivoEsperado: {
+              decrement: Number(ticket.montoPaciente),
+            },
+          },
+        });
+      } else {
+        await tx.cajaDiaria.update({
+          where: { id: ticket.cajaDiariaId },
+          data: {
+            montoDigitalEsperado: {
+              decrement: Number(ticket.montoPaciente),
+            },
+          },
+        });
+      }
+
+      return ticketActualizado;
     });
   }
 }

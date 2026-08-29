@@ -236,6 +236,10 @@ model Ticket {
   // Liquidación Médica
   liquidacionId              Int?
   liquidacion                LiquidacionMedico? @relation(fields: [liquidacionId], references: [id])
+
+  // Comprobante de Pago Médico
+  comprobantePagoMedicoId    Int?
+  comprobantePagoMedico      ComprobantePagoMedico? @relation(fields: [comprobantePagoMedicoId], references: [id])
   
   creadoEn                   DateTime           @default(now())
 
@@ -243,6 +247,7 @@ model Ticket {
   @@index([medicoId])
   @@index([cajaDiariaId])
   @@index([medicoId, fecha, estado])
+  @@index([comprobantePagoMedicoId])
   @@map("tickets")
 }
 
@@ -332,6 +337,7 @@ model AlquilerEspacio {
 
 model ComprobantePagoMedico {
   id                     Int                @id @default(autoincrement())
+  correlativoMedico      Int                @default(1)
   medicoId               Int
   medico                 Medico             @relation("MedicoPago", fields: [medicoId], references: [id])
   fecha                  DateTime           @default(now())
@@ -348,6 +354,8 @@ model ComprobantePagoMedico {
   cajaDiariaId           Int?
   cajaDiaria             CajaDiaria?        @relation("CajaPagoMedico", fields: [cajaDiariaId], references: [id])
   
+  tickets                Ticket[]
+
   // Auditoría
   usuarioCreadorId       Int
   usuarioCreador         Usuario            @relation("UsuarioCreadorComprobante", fields: [usuarioCreadorId], references: [id])
@@ -355,6 +363,7 @@ model ComprobantePagoMedico {
   actualizadoEn          DateTime           @updatedAt
 
   @@index([medicoId, fecha])
+  @@index([medicoId, correlativoMedico])
   @@index([estado])
   @@map("comprobantes_pago_medicos")
 }
@@ -443,5 +452,18 @@ model TicketItem {
   @@index([ticketId])
   @@index([tarifaId])
   @@map("ticket_items")
+}
+
+model ArchivoImportado {
+  id              Int      @id @default(autoincrement())
+  nombreArchivo   String
+  checksum        String   @unique
+  modulo          String   @default("IMPORTADOR_GENERAL")
+  filasProcesadas Int      @default(0)
+  fechaCarga      DateTime @default(now())
+  usuarioId       Int?
+
+  @@index([checksum])
+  @@map("archivos_importados")
 }
 

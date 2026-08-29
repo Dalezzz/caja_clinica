@@ -63,7 +63,19 @@ export class EgresosService {
     });
   }
 
-  remove(id: number) {
-    return this.prisma.egreso.delete({ where: { id } });
+  async remove(id: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const egreso = await tx.egreso.findUnique({ where: { id } });
+      if (!egreso) throw new NotFoundException('Egreso no encontrado');
+
+      await tx.cajaDiaria.update({
+        where: { id: egreso.cajaDiariaId },
+        data: {
+          montoEfectivoEsperado: { increment: Number(egreso.monto) },
+        },
+      });
+
+      return tx.egreso.delete({ where: { id } });
+    });
   }
 }

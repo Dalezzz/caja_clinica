@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as XLSX from 'xlsx';
+import * as crypto from 'crypto';
 import {
   cleanDoctorName,
   cleanName,
@@ -28,13 +29,22 @@ export class ImportadorService {
     return standardizeCategory(cat);
   }
 
-  async importarExcel(fileBuffer: Buffer, dryRun: boolean) {
+  async importarExcel(
+    fileBuffer: Buffer,
+    dryRun: boolean,
+    fileName: string = 'Importacion.xlsx',
+  ) {
     let workbook: XLSX.WorkBook;
     try {
       workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
     } catch (error) {
       throw new BadRequestException('El archivo subido no es un Excel válido.');
     }
+
+    const checksum = crypto.createHash('md5').update(fileBuffer).digest('hex');
+    const archivoPrevio = await (this.prisma as any).archivoImportado.findUnique({
+      where: { checksum },
+    });
 
     // Listar las hojas del Excel
     const sheetNames = workbook.SheetNames;
@@ -714,7 +724,24 @@ export class ImportadorService {
       totalEgresosMonto: totalEgresosVal,
       medicosNuevos: Array.from(nuevosMedicos),
       procedenciasNuevas: Array.from(nuevasProcedencias),
+      archivoDuplicado: !!archivoPrevio,
+      archivoMetadata: archivoPrevio
+        ? {
+            nombreArchivo: archivoPrevio.nombreArchivo,
+            fechaCarga: archivoPrevio.fechaCarga,
+            filasProcesadas: archivoPrevio.filasProcesadas,
+          }
+        : null,
       alertas: [
+        ...(archivoPrevio
+          ? [
+              `⚠️ AVISO: El archivo "${archivoPrevio.nombreArchivo}" ya fue importado previamente el ${new Date(
+                archivoPrevio.fechaCarga,
+              ).toLocaleDateString("es-PE")} a las ${new Date(
+                archivoPrevio.fechaCarga,
+              ).toLocaleTimeString("es-PE")}. El sistema omitirá automáticamente cualquier registro repetido para proteger los saldos de caja.`,
+            ]
+          : []),
         `${ticketsAImportar.filter((t) => !t.celular).length} atenciones sin número de celular.`,
         `${nuevasTarifas.size} tarifas que se crearán dinámicamente.`,
       ],
@@ -1060,6 +1087,18 @@ export class ImportadorService {
             data: {
               montoEfectivoEsperado: efectivoEsperado,
               montoEfectivoReal: efectivoEsperado,
+            },
+          });
+        }
+
+        // Registrar archivo importado en auditoría si es la primera vez
+        if (!archivoPrevio) {
+          await (tx as any).archivoImportado.create({
+            data: {
+              nombreArchivo: fileName,
+              checksum,
+              modulo: 'IMPORTADOR_GENERAL',
+              filasProcesadas: ticketsAImportar.length + egresosAImportar.length,
             },
           });
         }

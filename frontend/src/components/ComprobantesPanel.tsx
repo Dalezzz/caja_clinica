@@ -52,21 +52,39 @@ export function ComprobantesPanel({ medicos }: ComprobantesPanelProps) {
     }
   };
 
-  const cargar = useCallback(async () => {
-    if (!medicoSeleccionado) return;
-    setLoading(true);
-    try {
-      const data = await api.obtenerComprobantesPorMedico(medicoSeleccionado);
-      setComprobantes(data);
-    } catch {
-      mostrar("No se pudieron cargar los comprobantes.", true);
-    } finally {
-      setLoading(false);
-    }
-  }, [medicoSeleccionado]);
+  const cargar = useCallback(
+    async (isSilent = false) => {
+      if (!medicoSeleccionado) return;
+      if (!isSilent) setLoading(true);
+      try {
+        const data =
+          await api.obtenerComprobantesPorMedico(medicoSeleccionado);
+        setComprobantes((prev) =>
+          JSON.stringify(prev) === JSON.stringify(data) ? prev : data,
+        );
+      } catch {
+        if (!isSilent) mostrar("No se pudieron cargar los comprobantes.", true);
+      } finally {
+        if (!isSilent) setLoading(false);
+      }
+    },
+    [medicoSeleccionado],
+  );
 
   useEffect(() => {
-    cargar();
+    cargar(false);
+    const interval = setInterval(() => {
+      cargar(true);
+    }, 6000);
+    const handleFocus = () => cargar(true);
+    window.addEventListener("focus", handleFocus);
+    document.removeEventListener("visibilitychange", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
   }, [cargar]);
 
   // Cargar detalle completo (con tickets) al expandir
@@ -93,8 +111,14 @@ export function ComprobantesPanel({ medicos }: ComprobantesPanelProps) {
     setGenerando(true);
     try {
       const nuevo = await api.generarComprobanteDia(medicoSeleccionado);
-      setComprobantes((prev) => [nuevo, ...prev]);
-      mostrar("Comprobante del día generado correctamente.");
+      setComprobantes((prev) => {
+        const existe = prev.some((c) => c.id === nuevo.id);
+        if (existe) {
+          return prev.map((c) => (c.id === nuevo.id ? nuevo : c));
+        }
+        return [nuevo, ...prev];
+      });
+      mostrar("Comprobante del día actualizado/generado correctamente.");
     } catch (err: any) {
       mostrar(
         err?.message ||
@@ -261,7 +285,7 @@ export function ComprobantesPanel({ medicos }: ComprobantesPanelProps) {
               ))}
             </select>
             <button
-              onClick={cargar}
+              onClick={() => cargar(false)}
               className="h-9 w-9 flex items-center justify-center border border-zinc-200 rounded-md text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition"
               title="Recargar"
             >
@@ -333,7 +357,7 @@ export function ComprobantesPanel({ medicos }: ComprobantesPanelProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-zinc-900 text-xs">
-                        Comprobante #{comp.id}
+                        Comprobante #{comp.correlativoMedico || comp.id}
                       </span>
                       <span
                         className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${estadoBadge(comp.estado)}`}

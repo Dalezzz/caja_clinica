@@ -25,6 +25,10 @@ export class ImportadorController {
 
     const dryRun = dryRunQuery !== 'false'; // Por defecto es true para seguridad
 
-    return this.importadorService.importarExcel(file.buffer, dryRun);
+    return this.importadorService.importarExcel(
+      file.buffer,
+      dryRun,
+      file.originalname || 'Importacion.xlsx',
+    );
   }
 }

@@ -577,18 +577,7 @@ function App() {
     }
   };
 
-  // Live time display
-  const [currentTime, setCurrentTime] = useState(
-    new Date().toLocaleTimeString(),
-  );
 
-  useEffect(() => {
-    const timer = setInterval(
-      () => setCurrentTime(new Date().toLocaleTimeString()),
-      1000,
-    );
-    return () => clearInterval(timer);
-  }, []);
 
   // Keyboard Shortcuts Listener
   useEffect(() => {
@@ -638,32 +627,56 @@ function App() {
   const loadAllData = async () => {
     try {
       const fetchedProc = await api.get<Procedencia[]>("procedencias");
-      if (fetchedProc && fetchedProc.length > 0) setProcedencias(fetchedProc);
+      if (fetchedProc && fetchedProc.length > 0) {
+        setProcedencias((prev) =>
+          JSON.stringify(prev) === JSON.stringify(fetchedProc) ? prev : fetchedProc,
+        );
+      }
     } catch {}
 
     try {
       const fetchedMed = await api.get<Medico[]>("medicos");
-      if (fetchedMed && fetchedMed.length > 0) setMedicos(fetchedMed);
+      if (fetchedMed && fetchedMed.length > 0) {
+        setMedicos((prev) =>
+          JSON.stringify(prev) === JSON.stringify(fetchedMed) ? prev : fetchedMed,
+        );
+      }
     } catch {}
 
     try {
       const fetchedTar = await api.get<Tarifa[]>("tarifas");
-      if (fetchedTar && fetchedTar.length > 0) setTarifas(fetchedTar);
+      if (fetchedTar && fetchedTar.length > 0) {
+        setTarifas((prev) =>
+          JSON.stringify(prev) === JSON.stringify(fetchedTar) ? prev : fetchedTar,
+        );
+      }
     } catch {}
 
     try {
       const fetchedCaja = await api.get<CajaDiaria>("cajas-diarias/current");
-      if (fetchedCaja) setCaja(fetchedCaja);
+      if (fetchedCaja) {
+        setCaja((prev) =>
+          JSON.stringify(prev) === JSON.stringify(fetchedCaja) ? prev : fetchedCaja,
+        );
+      }
     } catch {}
 
     try {
       const fetchedTickets = await api.get<Ticket[]>("tickets");
-      if (fetchedTickets) setTickets(fetchedTickets);
+      if (fetchedTickets) {
+        setTickets((prev) =>
+          JSON.stringify(prev) === JSON.stringify(fetchedTickets) ? prev : fetchedTickets,
+        );
+      }
     } catch {}
 
     try {
       const fetchedAjustes = await api.obtenerAjustes();
-      if (fetchedAjustes) setAjustes(fetchedAjustes);
+      if (fetchedAjustes) {
+        setAjustes((prev) =>
+          JSON.stringify(prev) === JSON.stringify(fetchedAjustes) ? prev : fetchedAjustes,
+        );
+      }
     } catch {}
   };
 
@@ -708,11 +721,30 @@ function App() {
     }
   };
 
-  // Load backend data if available
+  // Load backend data and keep synced in real-time across devices
   useEffect(() => {
-    if (currentUser) {
+    if (!currentUser) return;
+
+    loadAllData();
+
+    // Auto-sincronización continua en segundo plano (cada 8s)
+    const syncInterval = setInterval(() => {
       loadAllData();
-    }
+    }, 8000);
+
+    // Actualización instantánea al volver a la pestaña/pantalla
+    const handleFocus = () => {
+      loadAllData();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
   }, [currentUser]);
 
   // Lookup Patient by DNI or Phone
@@ -1081,7 +1113,6 @@ function App() {
         <AppHeader
           activeTab={activeTab}
           caja={caja}
-          currentTime={currentTime}
           onOpenCaja={handleOpenCaja}
         />
 

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Wallet, Clock, Activity } from "lucide-react";
 import type { CajaDiaria } from "../api";
 import type { TabType } from "../types";
@@ -5,16 +6,27 @@ import type { TabType } from "../types";
 interface AppHeaderProps {
   activeTab: TabType;
   caja: CajaDiaria | null;
-  currentTime: string;
+  currentTime?: string;
   onOpenCaja: () => void;
 }
 
 export function AppHeader({
   activeTab,
   caja,
-  currentTime,
+  currentTime: propTime,
   onOpenCaja,
 }: AppHeaderProps) {
+  const [localTime, setLocalTime] = useState(
+    propTime || new Date().toLocaleTimeString(),
+  );
+
+  useEffect(() => {
+    const timer = setInterval(
+      () => setLocalTime(new Date().toLocaleTimeString()),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, []);
   const titleMap: Record<TabType, string> = {
     pos: "Admisión & Ventas POS",
     cola: "Cola de Pacientes",
@@ -84,7 +96,7 @@ export function AppHeader({
 
         <div className="hidden md:flex items-center gap-1.5 text-xs text-zinc-500 font-semibold bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200/80">
           <Clock className="h-3.5 w-3.5 text-zinc-400" />
-          <span>{currentTime}</span>
+          <span>{localTime}</span>
         </div>
       </div>
     </header>
