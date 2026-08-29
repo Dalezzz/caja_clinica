@@ -15,15 +15,16 @@
       Helvetica,
       Arial,
       sans-serif;
-    @apply bg-[#fafafa] text-zinc-950 antialiased selection:bg-zinc-900 selection:text-white;
+    @apply bg-[#f8fafc] text-zinc-950 antialiased selection:bg-zinc-900 selection:text-white;
   }
 
   /* Inputs de Shadcn */
   input[type="text"],
   input[type="number"],
+  input[type="date"],
   select,
   textarea {
-    @apply h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply h-9 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all duration-150 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50;
   }
 }
 
@@ -33,14 +34,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #fafafa;
+  background: #f8fafc;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e4e4e7;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1aa;
+  background: #94a3b8;
 }
 
 /* Estilos de Impresión Térmica 80mm */
@@ -65,15 +66,57 @@
   }
 }
 
+/* Tarjetas y Contenedores Premium */
 .white-card {
   background: #ffffff;
-  border: 1px solid #e4e4e7; /* border-zinc-200 */
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
 }
 
 .white-card-hover {
-  transition: all 0.15s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .white-card-hover:hover {
-  border-color: #d4d4d8; /* border-zinc-300 */
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 0.75rem;
+}
+
+/* Badges de Estado Estilizados */
+.badge-emerald {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80;
+}
+.badge-amber {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80;
+}
+.badge-sky {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200/80;
+}
+.badge-rose {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80;
+}
+.badge-purple {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200/80;
+}
+
+/* Tablas Modernas */
+.table-modern {
+  @apply w-full text-left text-xs text-zinc-700 border-collapse;
+}
+.table-modern th {
+  @apply bg-zinc-100/80 text-zinc-600 font-semibold px-4 py-3 border-b border-zinc-200 uppercase tracking-wider text-[10px];
+}
+.table-modern td {
+  @apply px-4 py-3 border-b border-zinc-100 transition-colors;
+}
+.table-modern tr:hover td {
+  @apply bg-zinc-50/80;
 }

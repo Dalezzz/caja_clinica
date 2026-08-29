@@ -14,6 +14,8 @@ import {
   TrendingUp,
   UserCheck,
   Wallet,
+  LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import type { TabType } from "../types";
 
@@ -128,7 +130,7 @@ export function AppSidebar({
       return false;
     }
     if (userRole === "FARMACIA" && tab.group !== "farmacia") {
-      return false; // El rol FARMACIA solo ve el módulo de farmacia
+      return false;
     }
     return true;
   });
@@ -144,17 +146,17 @@ export function AppSidebar({
   });
 
   return (
-    <aside className="w-64 shrink-0 bg-white border-r border-zinc-200 flex flex-col z-30 h-screen sticky top-0">
-      <div className="p-5 border-b border-zinc-200 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-zinc-900 text-zinc-50 flex items-center justify-center">
-          <Stethoscope className="h-5 w-5 stroke-[2]" />
+    <aside className="w-64 shrink-0 bg-white border-r border-zinc-200 flex flex-col z-30 h-screen sticky top-0 shadow-sm">
+      <div className="p-4 border-b border-zinc-200 flex items-center gap-3 bg-zinc-50/50">
+        <div className="h-10 w-10 rounded-xl bg-zinc-950 text-white flex items-center justify-center shadow-sm">
+          <Stethoscope className="h-5 w-5 stroke-[2.2] text-emerald-400" />
         </div>
         <div>
-          <h1 className="font-semibold text-sm text-zinc-900 tracking-tight">
+          <h1 className="font-bold text-sm text-zinc-950 tracking-tight">
             Centro Médico
           </h1>
-          <span className="bg-zinc-100 text-zinc-800 border border-zinc-200 text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider block mt-0.5 max-w-max">
-            Local LAN • Perú
+          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 mt-0.5">
+            <ShieldCheck className="h-2.5 w-2.5" /> LAN Master
           </span>
         </div>
       </div>
@@ -164,12 +166,12 @@ export function AppSidebar({
           const groupTabs = visibleTabs.filter((t) => t.group === group.key);
           return (
             <div key={group.key}>
-              <div className="px-3 mb-1">
+              <div className="px-3 mb-1.5">
                 <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                   {group.label}
                 </span>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {groupTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -179,24 +181,24 @@ export function AppSidebar({
                       key={tab.id}
                       type="button"
                       onClick={() => onTabChange(tab.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md font-semibold text-xs transition-all ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-semibold text-xs transition-all duration-150 relative ${
                         isActive
-                          ? "bg-zinc-900 text-zinc-50 shadow-sm"
-                          : "text-zinc-650 hover:text-zinc-950 hover:bg-zinc-100"
+                          ? "bg-zinc-950 text-white shadow-sm"
+                          : "text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100/80"
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
-                          className={`h-4 w-4 ${isActive ? "text-zinc-50" : "text-zinc-400"}`}
+                          className={`h-4 w-4 ${isActive ? "text-emerald-400" : "text-zinc-400"}`}
                         />
                         <span>{tab.label}</span>
                       </div>
                       {tab.badge !== undefined && (
                         <span
-                          className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${
+                          className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${
                             isActive
-                              ? "bg-zinc-800 text-zinc-300 border border-zinc-700"
-                              : "bg-zinc-150 text-zinc-600"
+                              ? "bg-zinc-800 text-emerald-300 border border-zinc-700"
+                              : "bg-zinc-100 text-zinc-600 border border-zinc-200"
                           }`}
                         >
                           {tab.badge}
@@ -211,30 +213,30 @@ export function AppSidebar({
         })}
       </nav>
 
-      <div className="p-4 border-t border-zinc-200 bg-zinc-50/50 space-y-3">
+      <div className="p-4 border-t border-zinc-200 bg-zinc-50/70 space-y-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
-              Usuario Activo
+              Sesión Activa
             </span>
             <button
               onClick={onLogout}
-              className="text-[9px] text-red-600 hover:text-red-500 font-semibold"
+              className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold inline-flex items-center gap-1 transition-colors"
             >
-              Cerrar Sesión
+              <LogOut className="h-3 w-3" /> Salir
             </button>
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-semibold text-zinc-900 leading-tight">
+            <span className="text-xs font-bold text-zinc-950 leading-tight">
               {userName}
             </span>
             <span
-              className={`text-[9px] font-medium max-w-max px-1.5 py-0.5 rounded mt-0.5 uppercase tracking-wider ${
+              className={`text-[9px] font-semibold max-w-max px-2 py-0.5 rounded-full mt-1 uppercase tracking-wider ${
                 userRole === "ADMINISTRADOR"
-                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                   : userRole === "FARMACIA"
-                  ? "bg-purple-100 text-purple-800 border border-purple-200"
-                  : "bg-sky-100 text-sky-800 border border-sky-200"
+                  ? "bg-purple-50 text-purple-700 border border-purple-200"
+                  : "bg-sky-50 text-sky-700 border border-sky-200"
               }`}
             >
               {userRole === "ADMINISTRADOR" ? "Administrador" : userRole === "FARMACIA" ? "Farmacia" : "Recepcionista"}
@@ -245,28 +247,27 @@ export function AppSidebar({
         {userRole === "RECEPCIONISTA" && (
           <button
             onClick={onTriggerAdminMode}
-            className="w-full flex items-center justify-center gap-1.5 h-8 rounded bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-[11px] transition-all"
+            className="w-full flex items-center justify-center gap-1.5 h-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-[11px] transition-all active:scale-[0.98]"
           >
-            <Lock className="h-3 w-3" /> Modo Administrador
+            <Lock className="h-3 w-3 text-amber-400" /> Modo Administrador
           </button>
         )}
 
         {userRole === "ADMINISTRADOR" && (
           <button
             onClick={onTriggerAdminMode}
-            className="w-full flex items-center justify-center gap-1.5 h-8 rounded border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-semibold text-[11px] transition-all"
+            className="w-full flex items-center justify-center gap-1.5 h-8 rounded-lg border border-zinc-300 hover:bg-zinc-200/60 text-zinc-800 font-semibold text-[11px] transition-all active:scale-[0.98]"
           >
             <Lock className="h-3 w-3 text-zinc-500" /> Salir de Modo Admin
           </button>
         )}
 
-        <div className="flex items-center justify-between text-[10px] font-medium text-zinc-500 pt-2 border-t border-zinc-200/80">
-          <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+        <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-500 pt-2 border-t border-zinc-200">
+          <span className="flex items-center gap-1 text-emerald-600">
             <Building className="h-3 w-3" /> Servidor OK
           </span>
-          <span className="flex items-center gap-1 font-semibold">
-            <Clock className="h-3 w-3 text-zinc-400" />{" "}
-            {new Date().toLocaleTimeString()}
+          <span className="flex items-center gap-1 text-zinc-400">
+            <Clock className="h-3 w-3" /> {new Date().toLocaleTimeString()}
           </span>
         </div>
       </div>

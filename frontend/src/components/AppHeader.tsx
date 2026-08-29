@@ -1,4 +1,4 @@
-import { Wallet } from "lucide-react";
+import { Wallet, Clock, Activity } from "lucide-react";
 import type { CajaDiaria } from "../api";
 import type { TabType } from "../types";
 
@@ -17,7 +17,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const titleMap: Record<TabType, string> = {
     pos: "Admisión & Ventas POS",
-    cola: "Cola de pacientes",
+    cola: "Cola de Pacientes",
     cierre: "Arqueo de Caja",
     egresos: "Egresos & Gastos",
     importer: "Importador Excel",
@@ -32,37 +32,42 @@ export function AppHeader({
   };
 
   return (
-    <header className="bg-white border-b border-zinc-200 sticky top-0 z-20 px-6 py-4 flex items-center justify-between gap-4">
-      <div className="font-bold text-zinc-800 text-xs uppercase tracking-wider">
-        Módulo: {titleMap[activeTab]}
+    <header className="bg-white/90 backdrop-blur-md border-b border-zinc-200/80 sticky top-0 z-20 px-6 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 px-3 py-1 bg-zinc-100/80 rounded-lg border border-zinc-200">
+          <Activity className="h-4 w-4 text-emerald-600 animate-pulse" />
+          <span className="font-bold text-zinc-800 text-xs tracking-tight">
+            {titleMap[activeTab]}
+          </span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {caja?.abierta ? (
-          <div className="bg-white border border-zinc-200 rounded-lg px-4 py-1.5 flex items-center gap-4 shadow-sm">
+          <div className="bg-white border border-zinc-200 rounded-xl px-4 py-1.5 flex items-center gap-4 shadow-sm hover:border-zinc-300 transition-all">
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
               </span>
-              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
                 TURNO ACTIVO
               </span>
             </div>
-            <div className="h-5 w-px bg-zinc-250"></div>
+            <div className="h-5 w-px bg-zinc-200"></div>
             <div className="text-right">
-              <div className="text-[9px] text-zinc-400 uppercase font-medium">
+              <div className="text-[9px] text-zinc-400 uppercase font-semibold">
                 Efectivo Esperado
               </div>
-              <div className="text-sm font-semibold text-zinc-950">
+              <div className="text-xs font-bold text-zinc-950">
                 S/ {Number(caja.montoEfectivoEsperado).toFixed(2)}
               </div>
             </div>
             <div className="text-right border-l border-zinc-200 pl-3">
-              <div className="text-[9px] text-zinc-400 uppercase font-medium">
+              <div className="text-[9px] text-zinc-400 uppercase font-semibold">
                 Digital (Yape/POS)
               </div>
-              <div className="text-sm font-semibold text-zinc-800">
+              <div className="text-xs font-bold text-sky-700">
                 S/ {Number(caja.montoDigitalEsperado).toFixed(2)}
               </div>
             </div>
@@ -71,13 +76,14 @@ export function AppHeader({
           <button
             type="button"
             onClick={onOpenCaja}
-            className="bg-zinc-900 hover:bg-zinc-900/90 text-zinc-50 font-semibold px-4 py-2 rounded-md shadow flex items-center gap-2 transition text-xs"
+            className="bg-zinc-950 hover:bg-zinc-800 text-white font-semibold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2.5 transition-all text-xs active:scale-[0.98]"
           >
-            <Wallet className="h-4 w-4" /> ABRIR CAJA DE ATENCIÓN (S/ 100)
+            <Wallet className="h-4 w-4 text-emerald-400" /> ABRIR CAJA DE ATENCIÓN (S/ 100)
           </button>
         )}
 
-        <div className="hidden md:flex items-center gap-1 text-[10px] text-zinc-500 font-medium">
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-zinc-500 font-semibold bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200/80">
+          <Clock className="h-3.5 w-3.5 text-zinc-400" />
           <span>{currentTime}</span>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   getAllowedOrigins,
   getJwtSecretOrThrow,
 } from './config/security-config';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const jwtSecret = getJwtSecretOrThrow();
@@ -36,6 +37,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new AllExceptionsFilter());
   const port = Number(process.env.PORT) || 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`Servidor backend escuchando en http://0.0.0.0:${port}`);
