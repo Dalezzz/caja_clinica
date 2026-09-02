@@ -117,6 +117,7 @@ model Medico {
   ticketsSolicitados  Ticket[]            @relation("MedicoSolicitante")
   liquidaciones       LiquidacionMedico[]
   comprobantes        ComprobantePagoMedico[] @relation("MedicoPago")
+  ubicaciones         Ubicacion[]
 
   @@map("medicos")
 }
@@ -466,4 +467,90 @@ model ArchivoImportado {
   @@index([checksum])
   @@map("archivos_importados")
 }
+
+// =========================================================
+// MÓDULO DE INVENTARIO GENERAL Y CONTROL PATRIMONIAL
+// =========================================================
+
+enum TipoUbicacion {
+  HABITACION
+  SOP
+  CONSULTORIO
+  ESTAR_ENFERMERIA
+  ALMACEN
+  AREA_COMUN
+  SERVICIOS_GENERALES
+}
+
+enum EstadoActivo {
+  OPERATIVO
+  EN_MANTENIMIENTO
+  MALOGRADO
+  DE_BAJA
+}
+
+model Ubicacion {
+  id               Int            @id @default(autoincrement())
+  nombre           String         @unique
+  tipo             TipoUbicacion  @default(AREA_COMUN)
+  piso             String?
+  descripcion      String?
+  especialidad     String?
+  medicoId         Int?
+  medico           Medico?        @relation(fields: [medicoId], references: [id])
+  
+  activos          ActivoFijo[]
+  trasladosOrigen  TrasladoActivo[] @relation("UbicacionOrigen")
+  trasladosDestino TrasladoActivo[] @relation("UbicacionDestino")
+  creadoEn         DateTime       @default(now())
+
+  @@map("ubicaciones")
+}
+
+model CategoriaActivo {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique
+  activos     ActivoFijo[]
+
+  @@map("categorias_activos")
+}
+
+model ActivoFijo {
+  id                Int             @id @default(autoincrement())
+  codigoPatrimonial String?         @unique
+  nombre            String
+  descripcion       String?
+  categoriaId       Int
+  categoria         CategoriaActivo @relation(fields: [categoriaId], references: [id])
+  ubicacionId       Int
+  ubicacion         Ubicacion       @relation(fields: [ubicacionId], references: [id])
+  cantidad          Int             @default(1)
+  estado            EstadoActivo    @default(OPERATIVO)
+  observaciones     String?
+  
+  traslados         TrasladoActivo[]
+  creadoEn          DateTime        @default(now())
+  actualizadoEn     DateTime        @updatedAt
+
+  @@index([ubicacionId])
+  @@index([categoriaId])
+  @@index([estado])
+  @@map("activos_fijos")
+}
+
+model TrasladoActivo {
+  id                 Int         @id @default(autoincrement())
+  activoFijoId       Int
+  activoFijo         ActivoFijo  @relation(fields: [activoFijoId], references: [id])
+  ubicacionOrigenId  Int
+  ubicacionOrigen    Ubicacion   @relation("UbicacionOrigen", fields: [ubicacionOrigenId], references: [id])
+  ubicacionDestinoId Int
+  ubicacionDestino   Ubicacion   @relation("UbicacionDestino", fields: [ubicacionDestinoId], references: [id])
+  motivo             String?
+  fecha              DateTime    @default(now())
+  usuarioId          Int?
+
+  @@map("traslados_activos")
+}
+
 

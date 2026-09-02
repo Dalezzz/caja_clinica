@@ -31,4 +31,26 @@ export class ImportadorController {
       file.originalname || 'Importacion.xlsx',
     );
   }
+
+  @Post('inventario-general')
+  @UseInterceptors(FileInterceptor('file'))
+  async importarInventarioGeneral(
+    @UploadedFile() file: any,
+    @Query('dryRun') dryRunQuery?: string,
+    @Query('force') forceQuery?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Se requiere subir un archivo Excel.');
+    }
+
+    const dryRun = dryRunQuery === 'true';
+    const force = forceQuery === 'true';
+
+    return this.importadorService.importarInventarioGeneralExcel(
+      file.buffer,
+      dryRun,
+      file.originalname || 'INVENTARIO AGOSTO.xlsx',
+      force,
+    );
+  }
 }

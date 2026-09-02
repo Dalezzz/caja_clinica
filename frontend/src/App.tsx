@@ -52,6 +52,7 @@ import { ComprobantesPanel } from "./components/ComprobantesPanel";
 import { EstadisticasPanel } from "./components/EstadisticasPanel";
 import { ReportesPanel } from "./components/ReportesPanel";
 import FarmaciaPanel from "./components/FarmaciaPanel";
+import { InventarioGeneralPanel } from "./components/InventarioGeneralPanel";
 import { Login } from "./components/Login";
 
 function App() {
@@ -1689,6 +1690,8 @@ function App() {
             (currentUser?.rol === "FARMACIA" || currentUser?.rol === "ADMINISTRADOR") && (
               <FarmaciaPanel />
             )}
+
+          {activeTab === "inventario_general" && <InventarioGeneralPanel />}
 
           {activeTab === "admin" && currentUser?.rol === "ADMINISTRADOR" && (
             <AdminPanel

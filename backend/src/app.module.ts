@@ -24,6 +24,7 @@ import { ReportesModule } from './reportes/reportes.module';
 import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
 import { SunatModule } from './sunat/sunat.module';
 import { FarmaciaModule } from './farmacia/farmacia.module';
+import { InventarioGeneralModule } from './inventario-general/inventario-general.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
@@ -52,6 +53,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
     PdfGeneratorModule,
     SunatModule,
     FarmaciaModule,
+    InventarioGeneralModule,
   ],
   controllers: [AppController],
   providers: [

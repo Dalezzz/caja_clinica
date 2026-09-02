@@ -720,6 +720,54 @@ const api = {
     }
     return res.json();
   },
+
+  // INVENTARIO GENERAL Y ACTIVOS FIJOS
+  async getUbicaciones(busqueda?: string, tipo?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (busqueda) params.set("busqueda", busqueda);
+    if (tipo) params.set("tipo", tipo);
+    const qs = params.toString();
+    return this.get(`inventario-general/ubicaciones${qs ? `?${qs}` : ""}`);
+  },
+
+  async getActivosFijos(busqueda?: string, estado?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (busqueda) params.set("busqueda", busqueda);
+    if (estado) params.set("estado", estado);
+    const qs = params.toString();
+    return this.get(`inventario-general/activos${qs ? `?${qs}` : ""}`);
+  },
+
+  async getEstadisticasInventario(): Promise<any> {
+    return this.get("inventario-general/estadisticas");
+  },
+
+  async crearActivoFijo(data: any): Promise<any> {
+    return this.post("inventario-general/activos", data);
+  },
+
+  async trasladarActivoFijo(id: number, data: any): Promise<any> {
+    return this.post(`inventario-general/activos/${id}/trasladar`, data);
+  },
+
+  async importarInventarioGeneralExcel(archivo: File, force: boolean = false): Promise<any> {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append("file", archivo);
+    const res = await fetch(
+      `${API_BASE_URL}/importar/inventario-general?dryRun=false${force ? "&force=true" : ""}`,
+      {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(err.message || "Error al importar inventario general");
+    }
+    return res.json();
+  },
 };
 
 export default api;

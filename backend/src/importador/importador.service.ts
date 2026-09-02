@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TipoUbicacion, EstadoActivo } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import * as crypto from 'crypto';
 import {
@@ -1126,5 +1127,273 @@ export class ImportadorService {
       return d.toISOString();
     }
     return new Date().toISOString();
+  }
+
+  async importarInventarioGeneralExcel(
+    fileBuffer: Buffer,
+    dryRun: boolean = false,
+    fileName: string = 'INVENTARIO AGOSTO.xlsx',
+    forceReimport: boolean = false,
+  ) {
+    let workbook: XLSX.WorkBook;
+    try {
+      workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+    } catch (error) {
+      throw new BadRequestException('El archivo subido no es un Excel válido.');
+    }
+
+    const checksum = crypto.createHash('md5').update(fileBuffer).digest('hex');
+    const archivoPrevio = await (this.prisma as any).archivoImportado.findUnique({
+      where: { checksum },
+    });
+
+    if (archivoPrevio && !forceReimport && !dryRun) {
+      return {
+        yaImportado: true,
+        fechaCarga: archivoPrevio.fechaCarga,
+        nombreArchivo: archivoPrevio.nombreArchivo,
+        mensaje: `El archivo "${fileName}" ya fue cargado previamente el ${new Date(archivoPrevio.fechaCarga).toLocaleDateString()}. No se realizaron cambios redundantes.`,
+      };
+    }
+
+    const resumen = {
+      ubicacionesCreadas: 0,
+      activosCreados: 0,
+      productosFarmaciaCreados: 0,
+      categoriasCreadas: 0,
+    };
+
+    const categoriasMap = new Map<string, number>();
+    const ubicacionesMap = new Map<string, number>();
+
+    const existingCats = await this.prisma.categoriaActivo.findMany();
+    existingCats.forEach((c) => categoriasMap.set(c.nombre.toUpperCase(), c.id));
+
+    const getOrCreateCatId = async (nombreCat: string) => {
+      const cleanCat = (nombreCat || 'General').trim();
+      const key = cleanCat.toUpperCase();
+      if (categoriasMap.has(key)) return categoriasMap.get(key)!;
+
+      if (!dryRun) {
+        const cat = await this.prisma.categoriaActivo.create({
+          data: { nombre: cleanCat },
+        });
+        categoriasMap.set(key, cat.id);
+        resumen.categoriasCreadas++;
+        return cat.id;
+      } else {
+        resumen.categoriasCreadas++;
+        const fakeId = categoriasMap.size + 1000;
+        categoriasMap.set(key, fakeId);
+        return fakeId;
+      }
+    };
+
+    const getOrCreateUbicacionId = async (
+      nombreUbicacion: string,
+      tipo: TipoUbicacion = TipoUbicacion.AREA_COMUN,
+      especialidad?: string,
+    ) => {
+      const cleanNombre = nombreUbicacion.trim();
+      const key = cleanNombre.toUpperCase();
+      if (ubicacionesMap.has(key)) return ubicacionesMap.get(key)!;
+
+      const existingDb = await this.prisma.ubicacion.findUnique({
+        where: { nombre: cleanNombre },
+      });
+      if (existingDb) {
+        ubicacionesMap.set(key, existingDb.id);
+        return existingDb.id;
+      }
+
+      if (!dryRun) {
+        const ub = await this.prisma.ubicacion.create({
+          data: { nombre: cleanNombre, tipo, especialidad },
+        });
+        ubicacionesMap.set(key, ub.id);
+        resumen.ubicacionesCreadas++;
+        return ub.id;
+      } else {
+        resumen.ubicacionesCreadas++;
+        const fakeId = ubicacionesMap.size + 2000;
+        ubicacionesMap.set(key, fakeId);
+        return fakeId;
+      }
+    };
+
+    for (const sheetName of workbook.SheetNames) {
+      const sheet = workbook.Sheets[sheetName];
+      if (!sheet) continue;
+
+      const nameUpper = sheetName.toUpperCase();
+
+      if (nameUpper.includes('MEDICAMENTOS')) {
+        const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+        for (const r of rows) {
+          if (!r || r.length < 3) continue;
+          const nombreMed = String(r[1] || '').trim();
+          const cantStr = String(r[2] || '').trim();
+          const cat = String(r[3] || 'Medicamentos').trim();
+
+          if (
+            nombreMed &&
+            !nombreMed.toLowerCase().includes('medicamento') &&
+            !nombreMed.toLowerCase().includes('n.°')
+          ) {
+            const cantidad = parseFloat(cantStr.replace(',', '.')) || 0;
+            if (!dryRun) {
+              const existeProd = await this.prisma.producto.findFirst({
+                where: {
+                  nombre: { equals: nombreMed, mode: 'insensitive' },
+                },
+              });
+
+              if (existeProd) {
+                await this.prisma.producto.update({
+                  where: { id: existeProd.id },
+                  data: {
+                    stockActual: cantidad,
+                    categoria: cat,
+                  },
+                });
+              } else {
+                await this.prisma.producto.create({
+                  data: {
+                    nombre: nombreMed,
+                    categoria: cat,
+                    stockActual: cantidad,
+                    unidadMedida: cantStr.includes('amp')
+                      ? 'AMP'
+                      : cantStr.includes('frasco')
+                      ? 'FRASCO'
+                      : 'UND',
+                  },
+                });
+              }
+            }
+            resumen.productosFarmaciaCreados++;
+          }
+        }
+      } else {
+        let defaultTipo: TipoUbicacion = TipoUbicacion.AREA_COMUN;
+        if (nameUpper.includes('HABITACION')) defaultTipo = TipoUbicacion.HABITACION;
+        else if (nameUpper.includes('SOP')) defaultTipo = TipoUbicacion.SOP;
+        else if (nameUpper.includes('CONSULTORIO')) defaultTipo = TipoUbicacion.CONSULTORIO;
+        else if (nameUpper.includes('ENFERMERIA')) defaultTipo = TipoUbicacion.ESTAR_ENFERMERIA;
+        else if (nameUpper.includes('ALMACEN')) defaultTipo = TipoUbicacion.ALMACEN;
+        else if (nameUpper.includes('COCINA') || nameUpper.includes('LAVANDERIA')) defaultTipo = TipoUbicacion.SERVICIOS_GENERALES;
+
+        const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+        let currentUbicacion = sheetName;
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length === 0) continue;
+
+          const c0 = String(row[0] || '').trim();
+          const c1 = String(row[1] || '').trim();
+          const c2 = String(row[2] || '').trim();
+
+          const norm0 = c0.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const norm1 = c1.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+          // Detectar títulos de sección/área
+          if (
+            c0 &&
+            !c1 &&
+            !c2 &&
+            !norm0.includes('categoria') &&
+            !norm0.includes('articulo') &&
+            !norm0.includes('cantidad')
+          ) {
+            currentUbicacion = c0;
+            continue;
+          }
+
+          // Omitir encabezados de columna (Categoría, Artículo, Cantidad, N.°)
+          if (
+            norm0.includes('categoria') ||
+            norm0.includes('articulo') ||
+            norm0.includes('cantidad') ||
+            norm1.includes('articulo') ||
+            norm1.includes('cantidad')
+          )
+            continue;
+
+          let cat = c0;
+          let art = c1;
+          let cantStr = c2;
+
+          if (!art && cat) {
+            art = cat;
+            cat = 'General';
+            cantStr = c1;
+          }
+
+          const normArt = art.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          if (!art || normArt.includes('articulo') || normArt.includes('cantidad') || normArt === 'n.o' || normArt === 'n°') continue;
+
+          const cantidad = parseInt(cantStr.replace(/\D/g, ''), 10) || 1;
+          const catId = await getOrCreateCatId(cat);
+          const ubId = await getOrCreateUbicacionId(currentUbicacion, defaultTipo);
+
+          if (!dryRun) {
+            const existeActivo = await this.prisma.activoFijo.findFirst({
+              where: {
+                nombre: art,
+                ubicacionId: ubId,
+              },
+            });
+
+            if (existeActivo) {
+              await this.prisma.activoFijo.update({
+                where: { id: existeActivo.id },
+                data: {
+                  cantidad,
+                  categoriaId: catId,
+                  estado: art.toLowerCase().includes('malogra')
+                    ? EstadoActivo.MALOGRADO
+                    : EstadoActivo.OPERATIVO,
+                },
+              });
+            } else {
+              await this.prisma.activoFijo.create({
+                data: {
+                  nombre: art,
+                  categoriaId: catId,
+                  ubicacionId: ubId,
+                  cantidad,
+                  estado: art.toLowerCase().includes('malogra')
+                    ? EstadoActivo.MALOGRADO
+                    : EstadoActivo.OPERATIVO,
+                },
+              });
+            }
+          }
+          resumen.activosCreados++;
+        }
+      }
+    }
+
+    if (!dryRun) {
+      await (this.prisma as any).archivoImportado.upsert({
+        where: { checksum },
+        update: { fechaCarga: new Date() },
+        create: {
+          nombreArchivo: fileName,
+          checksum,
+          modulo: 'INVENTARIO_GENERAL',
+          filasProcesadas: resumen.activosCreados,
+        },
+      });
+    }
+
+    return {
+      mensaje: dryRun
+        ? 'Simulación de importación completada'
+        : 'Inventario General importado exitosamente',
+      dryRun,
+      resumen,
+    };
   }
 }

@@ -41,6 +41,7 @@ export function AppHeader({
     estadisticas: "Estadísticas de Médicos",
     reportes: "Reportes por WhatsApp",
     farmacia: "Farmacia & Kardex",
+    inventario_general: "Inventario General & Activos Fijos",
   };
 
   return (

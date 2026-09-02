@@ -11,4 +11,5 @@ export type TabType =
   | "comprobantes"
   | "estadisticas"
   | "reportes"
-  | "farmacia";
+  | "farmacia"
+  | "inventario_general";

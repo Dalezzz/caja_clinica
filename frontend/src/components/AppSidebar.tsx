@@ -2,6 +2,7 @@ import {
   Activity,
   Building,
   Clock,
+  Boxes,
   FileSpreadsheet,
   FileText,
   Layers,
@@ -89,6 +90,13 @@ export function AppSidebar({
       id: "reportes",
       label: "Reportes WhatsApp",
       icon: MessageCircle,
+      group: "avanzada",
+    },
+    {
+      id: "inventario_general",
+      label: "Inventario General",
+      icon: Boxes,
+      badge: "Censo",
       group: "avanzada",
     },
     {

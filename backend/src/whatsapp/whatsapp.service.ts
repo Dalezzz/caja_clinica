@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, WASocket } from '@whiskeysockets/baileys';
 import * as QRCode from 'qrcode';
@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
-export class WhatsappService implements OnModuleInit {
+export class WhatsappService implements OnModuleInit, OnModuleDestroy {
   private sock: WASocket | null = null;
   private readonly logger = new Logger(WhatsappService.name);
   
@@ -23,6 +23,21 @@ export class WhatsappService implements OnModuleInit {
       this.connectToWhatsApp();
     } else {
       this.logger.log('WhatsApp Bot is disabled in settings.');
+    }
+  }
+
+  onModuleDestroy() {
+    this.logger.log('Destroying WhatsappService, closing socket connection...');
+    if (this.sock) {
+      try {
+        this.sock.ev.removeAllListeners('connection.update');
+        this.sock.ev.removeAllListeners('creds.update');
+        this.sock.ev.removeAllListeners('messages.upsert');
+        this.sock.end(undefined);
+        this.sock = null;
+      } catch (err) {
+        // ignore
+      }
     }
   }
 
